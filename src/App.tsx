@@ -1,11 +1,22 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
 import MapComponent from "@/components/map-component"
+import Admin from './Admin';
+import Login from './Login';
+import HouseholdOwner from './HouseholdOwner';
+
 
 export default function App() {
   return (
-    <main className="flex min-h-screen flex-col">
-      <div className="flex-1 flex">
-        <MapComponent />
-      </div>
-    </main>
+    <BrowserRouter>
+      <Routes>
+
+        <Route path='/guard' element={<MapComponent />} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/admin' element={<Admin />} />
+        <Route path='/household-owner' element={<HouseholdOwner />} />
+
+      </Routes>
+    </BrowserRouter>
   )
 }
