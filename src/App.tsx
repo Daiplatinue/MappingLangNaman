@@ -12,7 +12,7 @@ export default function App() {
       <Routes>
 
         <Route path='/guard' element={<MapComponent />} />
-        <Route path='/login' element={<Login />} />
+        <Route path='/' element={<Login />} />
         <Route path='/admin' element={<Admin />} />
         <Route path='/household-owner' element={<HouseholdOwner />} />
 

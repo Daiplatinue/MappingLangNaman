@@ -11,7 +11,6 @@ import {
   Bell,
   Send,
   BarChart3,
-  Settings,
   Phone,
 } from "lucide-react"
 
@@ -177,7 +176,6 @@ const ConsumptionCard = ({
 
 const RequestCard = ({
   item,
-  type,
 }: {
   item: { id: number; type: string; status: string; date: string; description: string }
   type: "request" | "incident"

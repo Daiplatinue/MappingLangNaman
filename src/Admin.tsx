@@ -1,3 +1,5 @@
+import type React from "react"
+
 import { useState } from "react"
 import {
   Bell,
@@ -27,7 +29,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +53,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { toast } from "sonner"
 import {
   SidebarProvider,
   Sidebar,
@@ -63,10 +66,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-const blocksData = [
+const initialBlocksData = [
   {
     id: "A",
     name: "Block A",
@@ -113,7 +115,7 @@ const blocksData = [
   },
 ]
 
-const householdsData = [
+const initialHouseholdsData = [
   {
     id: "A1",
     blockId: "A",
@@ -186,7 +188,7 @@ const householdsData = [
   },
 ]
 
-const incidentsData = [
+const initialIncidentsData = [
   {
     id: 1,
     blockId: "A",
@@ -234,7 +236,7 @@ const incidentsData = [
   },
 ]
 
-const paymentLogsData = [
+const initialPaymentLogsData = [
   {
     id: 1,
     blockId: "A",
@@ -282,7 +284,7 @@ const paymentLogsData = [
   },
 ]
 
-const newResidentsData = [
+const initialNewResidentsData = [
   {
     id: 1,
     name: "John Doe",
@@ -309,7 +311,7 @@ const newResidentsData = [
   },
 ]
 
-const securityAssignmentsData = [
+const initialSecurityAssignmentsData = [
   {
     id: 1,
     location: "Main Entrance",
@@ -361,7 +363,6 @@ const securityAssignmentsData = [
   },
 ]
 
-// Component for the statistics card
 const StatCard = ({ icon, title, value, description, color }: any) => {
   return (
     <Card>
@@ -377,7 +378,6 @@ const StatCard = ({ icon, title, value, description, color }: any) => {
   )
 }
 
-// Component for block card
 const BlockCard = ({ block, onClick, isActive }: any) => {
   return (
     <Card
@@ -417,7 +417,6 @@ const BlockCard = ({ block, onClick, isActive }: any) => {
   )
 }
 
-// Component for household card
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Under Renovation":
@@ -486,91 +485,36 @@ const HouseholdCard = ({ household, onClick, isActive }: any) => {
   )
 }
 
-// Notification Dialog Component
-const NotifyHouseholdDialog = () => {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Bell className="h-4 w-4" />
-          Send Notification
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Send Notification to Households</DialogTitle>
-          <DialogDescription>Send an announcement or notification to selected households or blocks.</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="notification-type">Notification Type</Label>
-            <Select defaultValue="announcement">
-              <SelectTrigger id="notification-type">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="announcement">Announcement</SelectItem>
-                <SelectItem value="maintenance">Maintenance Notice</SelectItem>
-                <SelectItem value="payment">Payment Reminder</SelectItem>
-                <SelectItem value="emergency">Emergency Alert</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="recipients">Recipients</Label>
-            <Select defaultValue="all">
-              <SelectTrigger id="recipients">
-                <SelectValue placeholder="Select recipients" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Households</SelectItem>
-                <SelectItem value="block-a">Block A</SelectItem>
-                <SelectItem value="block-b">Block B</SelectItem>
-                <SelectItem value="block-c">Block C</SelectItem>
-                <SelectItem value="block-d">Block D</SelectItem>
-                <SelectItem value="custom">Custom Selection</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="subject">Subject</Label>
-            <Input id="subject" placeholder="Enter notification subject" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="message">Message</Label>
-            <Textarea id="message" placeholder="Enter your notification message..." rows={5} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="priority">Priority</Label>
-            <Select defaultValue="normal">
-              <SelectTrigger id="priority">
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="urgent">Urgent</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="submit">Send Notification</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-// Main Admin Dashboard Component
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [selectedBlock, setSelectedBlock] = useState<any>(null)
   const [selectedHousehold, setSelectedHousehold] = useState<any>(null)
-  const [view, setView] = useState("blocks") // blocks, households, household-details
+  const [view, setView] = useState("blocks") 
 
-  // Calculate totals for dashboard
+  const [blocksData, setBlocksData] = useState(initialBlocksData)
+  const [householdsData, setHouseholdsData] = useState(initialHouseholdsData)
+  const [incidentsData, setIncidentsData] = useState(initialIncidentsData)
+  const [paymentLogsData, setPaymentLogsData] = useState(initialPaymentLogsData)
+  const [newResidentsData, setNewResidentsData] = useState(initialNewResidentsData)
+  const [securityAssignmentsData, setSecurityAssignmentsData] = useState(initialSecurityAssignmentsData)
+
+  const [isAddHouseholdOpen, setIsAddHouseholdOpen] = useState(false)
+  const [newHousehold, setNewHousehold] = useState({
+    id: "",
+    blockId: "",
+    address: "",
+    occupants: 0,
+    waterConsumption: 0,
+    electricityConsumption: 0,
+    status: "Occupied",
+    paymentStatus: "Paid",
+  })
+
+  const [updatedStatus, setUpdatedStatus] = useState("")
+  const [statusNotes, setStatusNotes] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+
   const totalBlocks = blocksData.length
   const totalHouseholds = blocksData.reduce((sum, block) => sum + block.totalHouseholds, 0)
   const totalWaterConsumption = blocksData.reduce((sum, block) => sum + block.waterConsumption, 0)
@@ -580,20 +524,17 @@ function AdminDashboard() {
   const totalUpcomingRenovation = blocksData.reduce((sum, block) => sum + block.upcomingRenovation, 0)
   const totalUnderConstruction = blocksData.reduce((sum, block) => sum + block.underConstruction, 0)
 
-  // Handle block selection
   const handleBlockSelect = (block: any) => {
     setSelectedBlock(block)
     setSelectedHousehold(null)
     setView("households")
   }
 
-  // Handle household selection
   const handleHouseholdSelect = (household: any) => {
     setSelectedHousehold(household)
     setView("household-details")
   }
 
-  // Handle back navigation
   const handleBack = () => {
     if (view === "household-details") {
       setView("households")
@@ -604,24 +545,167 @@ function AdminDashboard() {
     }
   }
 
-  // Filter households by selected block
   const filteredHouseholds = selectedBlock
     ? householdsData.filter((household) => household.blockId === selectedBlock.id)
     : householdsData
 
-  // Filter payment logs by selected block or household
   const filteredPaymentLogs = selectedHousehold
     ? paymentLogsData.filter((log) => log.householdId === selectedHousehold.id)
     : selectedBlock
       ? paymentLogsData.filter((log) => log.blockId === selectedBlock.id)
       : paymentLogsData
 
-  // Filter incidents by selected block or household
   const filteredIncidents = selectedHousehold
     ? incidentsData.filter((incident) => incident.householdId === selectedHousehold.id)
     : selectedBlock
       ? incidentsData.filter((incident) => incident.blockId === selectedBlock.id)
       : incidentsData
+
+  const handleNewHouseholdChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    let parsedValue = value
+
+    if (name === "occupants" || name === "waterConsumption" || name === "electricityConsumption") {
+      parsedValue = (Number.parseInt(value) || 0).toString()
+    }
+
+    setNewHousehold({
+      ...newHousehold,
+      [name]: parsedValue,
+    })
+  }
+
+  const handleAddHousehold = () => {
+    if (!newHousehold.id || !newHousehold.blockId || !newHousehold.address) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    if (householdsData.some((h) => h.id === newHousehold.id)) {
+      toast.error("Household ID already exists")
+      return
+    }
+
+    const updatedHouseholds = [...householdsData, newHousehold]
+    setHouseholdsData(updatedHouseholds)
+
+    const updatedBlocks = blocksData.map((block) => {
+      if (block.id === newHousehold.blockId) {
+        return {
+          ...block,
+          totalHouseholds: block.totalHouseholds + 1,
+          waterConsumption: block.waterConsumption + newHousehold.waterConsumption,
+          electricityConsumption: block.electricityConsumption + newHousehold.electricityConsumption,
+          underRenovation:
+            newHousehold.status === "Under Renovation" ? block.underRenovation + 1 : block.underRenovation,
+          upcomingRenovation:
+            newHousehold.status === "Upcoming Renovation" ? block.upcomingRenovation + 1 : block.upcomingRenovation,
+          underConstruction:
+            newHousehold.status === "Under Construction" ? block.underConstruction + 1 : block.underConstruction,
+        }
+      }
+      return block
+    })
+    setBlocksData(updatedBlocks)
+
+    setNewHousehold({
+      id: "",
+      blockId: "",
+      address: "",
+      occupants: 0,
+      waterConsumption: 0,
+      electricityConsumption: 0,
+      status: "Occupied",
+      paymentStatus: "Paid",
+    })
+    setIsAddHouseholdOpen(false)
+
+    toast.success("Household added successfully")
+  }
+
+  const handleUpdateHouseholdStatus = () => {
+    if (!selectedHousehold || !updatedStatus) {
+      toast.error("Please select a status")
+      return
+    }
+
+    const updatedHouseholds = householdsData.map((household) => {
+      if (household.id === selectedHousehold.id) {
+        return {
+          ...household,
+          status: updatedStatus,
+        }
+      }
+      return household
+    })
+    setHouseholdsData(updatedHouseholds)
+
+    setSelectedHousehold({
+      ...selectedHousehold,
+      status: updatedStatus,
+    })
+
+    const updatedBlocks = blocksData.map((block) => {
+      if (block.id === selectedHousehold.blockId) {
+        let newUnderRenovation = block.underRenovation
+        let newUpcomingRenovation = block.upcomingRenovation
+        let newUnderConstruction = block.underConstruction
+
+        if (selectedHousehold.status === "Under Renovation") newUnderRenovation--
+        else if (selectedHousehold.status === "Upcoming Renovation") newUpcomingRenovation--
+        else if (selectedHousehold.status === "Under Construction") newUnderConstruction--
+
+        if (updatedStatus === "Under Renovation") newUnderRenovation++
+        else if (updatedStatus === "Upcoming Renovation") newUpcomingRenovation++
+        else if (updatedStatus === "Under Construction") newUnderConstruction++
+
+        return {
+          ...block,
+          underRenovation: newUnderRenovation,
+          upcomingRenovation: newUpcomingRenovation,
+          underConstruction: newUnderConstruction,
+        }
+      }
+      return block
+    })
+    setBlocksData(updatedBlocks)
+
+    setUpdatedStatus("")
+    setStatusNotes("")
+    setStartDate("")
+    setEndDate("")
+
+    toast.success("Household status updated successfully")
+  }
+
+  const handleAddIncident = (incident: any) => {
+    const newId = Math.max(...incidentsData.map((i) => i.id)) + 1
+    const newIncident = {
+      ...incident,
+      id: newId,
+      date: new Date().toISOString().split("T")[0],
+      status: "In Progress",
+    }
+
+    setIncidentsData([...incidentsData, newIncident])
+
+    const updatedBlocks = blocksData.map((block) => {
+      if (block.id === incident.blockId) {
+        return {
+          ...block,
+          incidents: block.incidents + 1,
+        }
+      }
+      return block
+    })
+    setBlocksData(updatedBlocks)
+
+    toast.success("Incident reported successfully")
+  }
+
+  const handleSendNotification = (notification: any) => {
+    toast.success(`Notification sent to ${notification.recipients}`)
+  }
 
   return (
     <SidebarProvider>
@@ -657,12 +741,7 @@ function AdminDashboard() {
                       <span>Blocks</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton isActive={activeTab === "households"} onClick={() => setActiveTab("households")}>
-                      <Home className="h-4 w-4" />
-                      <span>Households</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+
                   <SidebarMenuItem>
                     <SidebarMenuButton isActive={activeTab === "payments"} onClick={() => setActiveTab("payments")}>
                       <FileText className="h-4 w-4" />
@@ -750,7 +829,6 @@ function AdminDashboard() {
             <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10">
               <div className="container mx-auto py-4 px-4 flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <SidebarTrigger />
                   <h1 className="text-xl font-bold">Admin Dashboard</h1>
                 </div>
                 <div className="flex items-center gap-4">
@@ -758,7 +836,7 @@ function AdminDashboard() {
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input type="search" placeholder="Search..." className="w-[200px] pl-8 md:w-[300px]" />
                   </div>
-                  <NotifyHouseholdDialog />
+                  <NotifyHouseholdDialog onSendNotification={handleSendNotification} />
                   <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
                   </Button>
@@ -768,25 +846,6 @@ function AdminDashboard() {
 
             <main className="container mx-auto py-6 px-4">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 w-full">
-                <TabsList className="grid grid-cols-4 md:w-[600px] w-full mx-auto">
-                  <TabsTrigger value="dashboard">
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </TabsTrigger>
-                  <TabsTrigger value="blocks">
-                    <Building className="h-4 w-4 mr-2" />
-                    Blocks
-                  </TabsTrigger>
-                  <TabsTrigger value="households">
-                    <Home className="h-4 w-4 mr-2" />
-                    Households
-                  </TabsTrigger>
-                  <TabsTrigger value="payments">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Payments
-                  </TabsTrigger>
-                </TabsList>
-
                 {/* Dashboard Tab */}
                 <TabsContent value="dashboard" className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-4 w-full">
@@ -1033,6 +1092,103 @@ function AdminDashboard() {
                       </CardFooter>
                     </Card>
                   </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Recent Incidents</CardTitle>
+                        <CardDescription>Latest reported incidents in the subdivision</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {incidentsData.slice(0, 4).map((incident) => (
+                            <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
+                              <div
+                                className={`p-2 rounded-full ${
+                                  incident.type === "Security"
+                                    ? "bg-red-100"
+                                    : incident.type === "Maintenance"
+                                      ? "bg-blue-100"
+                                      : incident.type === "Noise"
+                                        ? "bg-yellow-100"
+                                        : "bg-purple-100"
+                                }`}
+                              >
+                                <AlertTriangle
+                                  className={`h-4 w-4 ${
+                                    incident.type === "Security"
+                                      ? "text-red-500"
+                                      : incident.type === "Maintenance"
+                                        ? "text-blue-500"
+                                        : incident.type === "Noise"
+                                          ? "text-yellow-500"
+                                          : "text-purple-500"
+                                  }`}
+                                />
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{incident.description}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {incident.type}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">{incident.date}</span>
+                                  <Badge
+                                    className={
+                                      incident.status === "Resolved"
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-yellow-100 text-yellow-700"
+                                    }
+                                  >
+                                    {incident.status}
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {incident.blockId}-{incident.householdId}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setActiveTab("incidents")}>
+                          View All Incidents
+                        </Button>
+                      </CardFooter>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>New Residents</CardTitle>
+                        <CardDescription>Recently moved-in residents</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {newResidentsData.map((resident) => (
+                            <div key={resident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
+                              <Avatar>
+                                <AvatarFallback>{resident.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{resident.name}</p>
+                                <p className="text-sm text-muted-foreground">House ID: {resident.householdId}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Calendar className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-xs text-muted-foreground">Moved in: {resident.moveInDate}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setActiveTab("residents")}>
+                          View All New Residents
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </div>
                 </TabsContent>
 
                 {/* Blocks Tab */}
@@ -1044,10 +1200,143 @@ function AdminDashboard() {
                         <Filter className="h-4 w-4" />
                         Filter
                       </Button>
-                      <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add Block
-                      </Button>
+                      <Dialog open={isAddHouseholdOpen} onOpenChange={setIsAddHouseholdOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add Block / Household
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                          <DialogHeader>
+                            <DialogTitle>Add New Household</DialogTitle>
+                            <DialogDescription>
+                              Enter the details for the new household to add to the system.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="blockId">Block</Label>
+                                <Select
+                                  name="blockId"
+                                  value={newHousehold.blockId}
+                                  onValueChange={(value) => setNewHousehold({ ...newHousehold, blockId: value })}
+                                >
+                                  <SelectTrigger id="blockId">
+                                    <SelectValue placeholder="Select block" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {blocksData.map((block) => (
+                                      <SelectItem key={block.id} value={block.id}>
+                                        {block.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="id">Household ID</Label>
+                                <Input
+                                  id="id"
+                                  name="id"
+                                  placeholder="e.g. A5"
+                                  value={newHousehold.id}
+                                  onChange={handleNewHouseholdChange}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="address">Address</Label>
+                              <Input
+                                id="address"
+                                name="address"
+                                placeholder="e.g. A5 Sugbo St"
+                                value={newHousehold.address}
+                                onChange={handleNewHouseholdChange}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="occupants">Occupants</Label>
+                                <Input
+                                  id="occupants"
+                                  name="occupants"
+                                  type="number"
+                                  min="0"
+                                  value={newHousehold.occupants}
+                                  onChange={handleNewHouseholdChange}
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="status">Status</Label>
+                                <Select
+                                  name="status"
+                                  value={newHousehold.status}
+                                  onValueChange={(value) => setNewHousehold({ ...newHousehold, status: value })}
+                                >
+                                  <SelectTrigger id="status">
+                                    <SelectValue placeholder="Select status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Occupied">Occupied</SelectItem>
+                                    <SelectItem value="Under Renovation">Under Renovation</SelectItem>
+                                    <SelectItem value="Upcoming Renovation">Upcoming Renovation</SelectItem>
+                                    <SelectItem value="Under Construction">Under Construction</SelectItem>
+                                    <SelectItem value="Upcoming Construction">Upcoming Construction</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="waterConsumption">Water Consumption (m³)</Label>
+                                <Input
+                                  id="waterConsumption"
+                                  name="waterConsumption"
+                                  type="number"
+                                  min="0"
+                                  value={newHousehold.waterConsumption}
+                                  onChange={handleNewHouseholdChange}
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="electricityConsumption">Electricity (kWh)</Label>
+                                <Input
+                                  id="electricityConsumption"
+                                  name="electricityConsumption"
+                                  type="number"
+                                  min="0"
+                                  value={newHousehold.electricityConsumption}
+                                  onChange={handleNewHouseholdChange}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="paymentStatus">Payment Status</Label>
+                              <Select
+                                name="paymentStatus"
+                                value={newHousehold.paymentStatus}
+                                onValueChange={(value) => setNewHousehold({ ...newHousehold, paymentStatus: value })}
+                              >
+                                <SelectTrigger id="paymentStatus">
+                                  <SelectValue placeholder="Select payment status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Paid">Paid</SelectItem>
+                                  <SelectItem value="Overdue">Overdue</SelectItem>
+                                  <SelectItem value="N/A">N/A</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button type="submit" onClick={handleAddHousehold}>
+                              Add Household
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
 
@@ -1151,7 +1440,10 @@ function AdminDashboard() {
                                           <div className="grid gap-4 py-4">
                                             <div className="grid gap-2">
                                               <Label htmlFor="status">Status</Label>
-                                              <Select defaultValue={selectedHousehold.status}>
+                                              <Select
+                                                defaultValue={selectedHousehold.status}
+                                                onValueChange={setUpdatedStatus}
+                                              >
                                                 <SelectTrigger id="status">
                                                   <SelectValue placeholder="Select status" />
                                                 </SelectTrigger>
@@ -1170,318 +1462,36 @@ function AdminDashboard() {
                                             </div>
                                             <div className="grid gap-2">
                                               <Label htmlFor="notes">Notes</Label>
-                                              <Textarea id="notes" placeholder="Add any relevant notes..." />
+                                              <Textarea
+                                                id="notes"
+                                                placeholder="Add any relevant notes..."
+                                                value={statusNotes}
+                                                onChange={(e) => setStatusNotes(e.target.value)}
+                                              />
                                             </div>
                                             <div className="grid gap-2">
                                               <Label htmlFor="start-date">Start Date (if applicable)</Label>
-                                              <Input id="start-date" type="date" />
+                                              <Input
+                                                id="start-date"
+                                                type="date"
+                                                value={startDate}
+                                                onChange={(e) => setStartDate(e.target.value)}
+                                              />
                                             </div>
                                             <div className="grid gap-2">
                                               <Label htmlFor="end-date">Expected End Date</Label>
-                                              <Input id="end-date" type="date" />
+                                              <Input
+                                                id="end-date"
+                                                type="date"
+                                                value={endDate}
+                                                onChange={(e) => setEndDate(e.target.value)}
+                                              />
                                             </div>
                                           </div>
                                           <DialogFooter>
-                                            <Button type="submit">Update Status</Button>
-                                          </DialogFooter>
-                                        </DialogContent>
-                                      </Dialog>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Occupants</span>
-                                    <span className="font-medium">{selectedHousehold.occupants}</span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div>
-                                <div className="space-y-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Water Consumption</span>
-                                    <div className="flex items-center gap-2">
-                                      <Droplet className="h-4 w-4 text-blue-500" />
-                                      <span className="font-medium">{selectedHousehold.waterConsumption} m³</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Electricity Consumption</span>
-                                    <div className="flex items-center gap-2">
-                                      <Zap className="h-4 w-4 text-yellow-500" />
-                                      <span className="font-medium">
-                                        {selectedHousehold.electricityConsumption} kWh
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Payment Status</span>
-                                    <Badge
-                                      className={
-                                        selectedHousehold.paymentStatus === "Overdue"
-                                          ? "bg-red-100 text-red-700"
-                                          : selectedHousehold.paymentStatus === "N/A"
-                                            ? "bg-gray-100 text-gray-700"
-                                            : "bg-green-100 text-green-700"
-                                      }
-                                    >
-                                      {selectedHousehold.paymentStatus}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                          <CardFooter>
-                            <div className="flex gap-2 w-full">
-                              <Button variant="outline" className="flex-1">
-                                Edit Details
-                              </Button>
-                              <Button className="flex-1">Send Notification</Button>
-                            </div>
-                          </CardFooter>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Recent Activity</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              {filteredIncidents.length > 0 ? (
-                                filteredIncidents.map((incident) => (
-                                  <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
-                                    <div
-                                      className={`p-2 rounded-full ${
-                                        incident.type === "Security"
-                                          ? "bg-red-100"
-                                          : incident.type === "Maintenance"
-                                            ? "bg-blue-100"
-                                            : incident.type === "Noise"
-                                              ? "bg-yellow-100"
-                                              : "bg-purple-100"
-                                      }`}
-                                    >
-                                      <AlertTriangle
-                                        className={`h-4 w-4 ${
-                                          incident.type === "Security"
-                                            ? "text-red-500"
-                                            : incident.type === "Maintenance"
-                                              ? "text-blue-500"
-                                              : incident.type === "Noise"
-                                                ? "text-yellow-500"
-                                                : "text-purple-500"
-                                        }`}
-                                      />
-                                    </div>
-                                    <div>
-                                      <p className="font-medium text-sm">{incident.description}</p>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <Badge variant="outline" className="text-xs">
-                                          {incident.type}
-                                        </Badge>
-                                        <span className="text-xs text-muted-foreground">{incident.date}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-center py-4 text-muted-foreground">
-                                  No incidents reported for this household
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Payment History</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {filteredPaymentLogs.length > 0 ? (
-                                filteredPaymentLogs.map((payment) => (
-                                  <TableRow key={payment.id}>
-                                    <TableCell>{payment.date}</TableCell>
-                                    <TableCell>{payment.type}</TableCell>
-                                    <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
-                                    <TableCell>
-                                      <Badge
-                                        className={
-                                          payment.status === "Overdue"
-                                            ? "bg-red-100 text-red-700"
-                                            : payment.status === "N/A"
-                                              ? "bg-gray-100 text-gray-700"
-                                              : "bg-green-100 text-green-700"
-                                        }
-                                      >
-                                        {payment.status}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      <Button variant="ghost" size="sm">
-                                        View
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))
-                              ) : (
-                                <TableRow>
-                                  <TableCell colSpan={5} className="text-center">
-                                    No payment records found
-                                  </TableCell>
-                                </TableRow>
-                              )}
-                            </TableBody>
-                          </Table>
-                        </CardContent>
-                      </Card>
-                    </>
-                  )}
-                </TabsContent>
-
-                {/* Households Tab */}
-                <TabsContent value="households" className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">All Households</h2>
-                    <div className="flex items-center gap-2">
-                      <Select defaultValue="all">
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Filter by Block" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Blocks</SelectItem>
-                          {blocksData.map((block) => (
-                            <SelectItem key={block.id} value={block.id}>
-                              {block.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add Household
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {householdsData.map((household) => (
-                      <HouseholdCard
-                        key={household.id}
-                        household={household}
-                        onClick={(household : any) => {
-                          setSelectedHousehold(household)
-                          setView("household-details")
-                        }}
-                        isActive={selectedHousehold?.id === household.id}
-                      />
-                    ))}
-                  </div>
-                  {view === "household-details" && selectedHousehold && (
-                    <>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setView("blocks")
-                            setSelectedHousehold(null)
-                          }}
-                        >
-                          <ChevronDown className="h-4 w-4 rotate-90 mr-2" />
-                          Back to Households
-                        </Button>
-                        <h3 className="text-lg font-medium">
-                          Household {selectedHousehold.id} - {selectedHousehold.address}
-                        </h3>
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Household Information</CardTitle>
-                            <CardDescription>{selectedHousehold.address}</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <div>
-                                <div className="space-y-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Block</span>
-                                    <span className="font-medium">{selectedHousehold.blockId}</span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">House ID</span>
-                                    <span className="font-medium">{selectedHousehold.id}</span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Status</span>
-                                    <div className="flex items-center gap-2">
-                                      <Badge
-                                        className={
-                                          selectedHousehold.status === "Under Renovation"
-                                            ? "bg-orange-100 text-orange-700"
-                                            : selectedHousehold.status === "Upcoming Renovation"
-                                              ? "bg-yellow-100 text-yellow-700"
-                                              : selectedHousehold.status === "Under Construction"
-                                                ? "bg-purple-100 text-purple-700"
-                                                : "bg-green-100 text-green-700"
-                                        }
-                                      >
-                                        {selectedHousehold.status}
-                                      </Badge>
-                                      <Dialog>
-                                        <DialogTrigger asChild>
-                                          <Button variant="outline" size="sm">
-                                            Change Status
-                                          </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                          <DialogHeader>
-                                            <DialogTitle>Update House Status</DialogTitle>
-                                            <DialogDescription>
-                                              Change the current status of {selectedHousehold.id} -{" "}
-                                              {selectedHousehold.address}
-                                            </DialogDescription>
-                                          </DialogHeader>
-                                          <div className="grid gap-4 py-4">
-                                            <div className="grid gap-2">
-                                              <Label htmlFor="status">Status</Label>
-                                              <Select defaultValue={selectedHousehold.status}>
-                                                <SelectTrigger id="status">
-                                                  <SelectValue placeholder="Select status" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                  <SelectItem value="Occupied">Occupied</SelectItem>
-                                                  <SelectItem value="Under Renovation">Under Renovation</SelectItem>
-                                                  <SelectItem value="Upcoming Renovation">
-                                                    Upcoming Renovation
-                                                  </SelectItem>
-                                                  <SelectItem value="Under Construction">Under Construction</SelectItem>
-                                                  <SelectItem value="Upcoming Construction">
-                                                    Upcoming Construction
-                                                  </SelectItem>
-                                                </SelectContent>
-                                              </Select>
-                                            </div>
-                                            <div className="grid gap-2">
-                                              <Label htmlFor="notes">Notes</Label>
-                                              <Textarea id="notes" placeholder="Add any relevant notes..." />
-                                            </div>
-                                          </div>
-                                          <DialogFooter>
-                                            <Button type="submit">Update Status</Button>
+                                            <Button type="submit" onClick={handleUpdateHouseholdStatus}>
+                                              Update Status
+                                            </Button>
                                           </DialogFooter>
                                         </DialogContent>
                                       </Dialog>
@@ -1735,10 +1745,92 @@ function AdminDashboard() {
                           <SelectItem value="in-progress">In Progress</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add Incident
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add Incident
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Report New Incident</DialogTitle>
+                            <DialogDescription>
+                              Fill in the details to report a new incident in the subdivision.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="incident-block">Block</Label>
+                                <Select defaultValue="">
+                                  <SelectTrigger id="incident-block">
+                                    <SelectValue placeholder="Select block" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {blocksData.map((block) => (
+                                      <SelectItem key={block.id} value={block.id}>
+                                        {block.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="incident-household">Household</Label>
+                                <Select defaultValue="">
+                                  <SelectTrigger id="incident-household">
+                                    <SelectValue placeholder="Select household" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {householdsData.map((household) => (
+                                      <SelectItem key={household.id} value={household.id}>
+                                        {household.id} - {household.address}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="incident-type">Incident Type</Label>
+                              <Select defaultValue="">
+                                <SelectTrigger id="incident-type">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Security">Security</SelectItem>
+                                  <SelectItem value="Maintenance">Maintenance</SelectItem>
+                                  <SelectItem value="Noise">Noise</SelectItem>
+                                  <SelectItem value="Construction">Construction</SelectItem>
+                                  <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="incident-description">Description</Label>
+                              <Textarea id="incident-description" placeholder="Describe the incident..." rows={4} />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              type="submit"
+                              onClick={() => {
+                                const newIncident = {
+                                  blockId: "A", // This would come from the form
+                                  householdId: "A1", // This would come from the form
+                                  type: "Security", // This would come from the form
+                                  description: "New incident reported", // This would come from the form
+                                }
+                                handleAddIncident(newIncident)
+                                // Close dialog
+                              }}
+                            >
+                              Report Incident
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
 
@@ -2174,6 +2266,111 @@ function AdminDashboard() {
         </div>
       </div>
     </SidebarProvider>
+  )
+}
+
+const NotifyHouseholdDialog = ({ onSendNotification }: { onSendNotification: (notification: any) => void }) => {
+  const [notificationType, setNotificationType] = useState("announcement")
+  const [recipients, setRecipients] = useState("all")
+  const [subject, setSubject] = useState("")
+  const [message, setMessage] = useState("")
+  const [priority, setPriority] = useState("normal")
+
+  const handleSendNotification = () => {
+    onSendNotification({
+      type: notificationType,
+      recipients,
+      subject,
+      message,
+      priority,
+    })
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button className="gap-2">
+          <Bell className="h-4 w-4" />
+          Send Notification
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Send Notification to Households</DialogTitle>
+          <DialogDescription>Send an announcement or notification to selected households or blocks.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="notification-type">Notification Type</Label>
+            <Select value={notificationType} onValueChange={setNotificationType}>
+              <SelectTrigger id="notification-type">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="announcement">Announcement</SelectItem>
+                <SelectItem value="maintenance">Maintenance Notice</SelectItem>
+                <SelectItem value="payment">Payment Reminder</SelectItem>
+                <SelectItem value="emergency">Emergency Alert</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="recipients">Recipients</Label>
+            <Select value={recipients} onValueChange={setRecipients}>
+              <SelectTrigger id="recipients">
+                <SelectValue placeholder="Select recipients" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Households</SelectItem>
+                <SelectItem value="block-a">Block A</SelectItem>
+                <SelectItem value="block-b">Block B</SelectItem>
+                <SelectItem value="block-c">Block C</SelectItem>
+                <SelectItem value="block-d">Block D</SelectItem>
+                <SelectItem value="custom">Custom Selection</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="subject">Subject</Label>
+            <Input
+              id="subject"
+              placeholder="Enter notification subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
+              placeholder="Enter your notification message..."
+              rows={5}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="priority">Priority</Label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger id="priority">
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="submit" onClick={handleSendNotification}>
+            Send Notification
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
