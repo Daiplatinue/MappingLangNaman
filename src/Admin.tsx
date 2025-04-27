@@ -68,300 +68,16 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const initialBlocksData = [
-  {
-    id: "A",
-    name: "Block A",
-    totalHouseholds: 24,
-    waterConsumption: 4320,
-    electricityConsumption: 5280,
-    incidents: 3,
-    underRenovation: 2,
-    upcomingRenovation: 1,
-    underConstruction: 1,
-  },
-  {
-    id: "B",
-    name: "Block B",
-    totalHouseholds: 32,
-    waterConsumption: 5760,
-    electricityConsumption: 7040,
-    incidents: 5,
-    underRenovation: 3,
-    upcomingRenovation: 2,
-    underConstruction: 0,
-  },
-  {
-    id: "C",
-    name: "Block C",
-    totalHouseholds: 28,
-    waterConsumption: 5040,
-    electricityConsumption: 6160,
-    incidents: 2,
-    underRenovation: 1,
-    upcomingRenovation: 3,
-    underConstruction: 2,
-  },
-  {
-    id: "D",
-    name: "Block D",
-    totalHouseholds: 20,
-    waterConsumption: 3600,
-    electricityConsumption: 4400,
-    incidents: 1,
-    underRenovation: 0,
-    upcomingRenovation: 2,
-    underConstruction: 1,
-  },
-]
-
-const initialHouseholdsData = [
-  {
-    id: "A1",
-    blockId: "A",
-    address: "A1 Sugbo St",
-    occupants: 4,
-    waterConsumption: 180,
-    electricityConsumption: 220,
-    status: "Occupied",
-    paymentStatus: "Paid",
-  },
-  {
-    id: "A2",
-    blockId: "A",
-    address: "A2 Sugbo St",
-    occupants: 3,
-    waterConsumption: 150,
-    electricityConsumption: 190,
-    status: "Under Renovation",
-    paymentStatus: "Paid",
-  },
-  {
-    id: "A3",
-    blockId: "A",
-    address: "A3 Sugbo St",
-    occupants: 5,
-    waterConsumption: 200,
-    electricityConsumption: 240,
-    status: "Occupied",
-    paymentStatus: "Overdue",
-  },
-  {
-    id: "B1",
-    blockId: "B",
-    address: "B1 Sugbo St",
-    occupants: 4,
-    waterConsumption: 170,
-    electricityConsumption: 210,
-    status: "Upcoming Renovation",
-    paymentStatus: "Paid",
-  },
-  {
-    id: "B2",
-    blockId: "B",
-    address: "B2 Sugbo St",
-    occupants: 2,
-    waterConsumption: 120,
-    electricityConsumption: 160,
-    status: "Under Renovation",
-    paymentStatus: "Paid",
-  },
-  {
-    id: "C1",
-    blockId: "C",
-    address: "C1 Sugbo St",
-    occupants: 6,
-    waterConsumption: 220,
-    electricityConsumption: 280,
-    status: "Under Construction",
-    paymentStatus: "N/A",
-  },
-  {
-    id: "D1",
-    blockId: "D",
-    address: "D1 Sugbo St",
-    occupants: 0,
-    waterConsumption: 0,
-    electricityConsumption: 0,
-    status: "Upcoming Construction",
-    paymentStatus: "N/A",
-  },
-]
-
-const initialIncidentsData = [
-  {
-    id: 1,
-    blockId: "A",
-    householdId: "A3",
-    type: "Security",
-    description: "Suspicious person near house",
-    date: "2024-03-10",
-    status: "Resolved",
-  },
-  {
-    id: 2,
-    blockId: "B",
-    householdId: "B1",
-    type: "Maintenance",
-    description: "Water pipe leakage affecting neighboring houses",
-    date: "2024-03-12",
-    status: "In Progress",
-  },
-  {
-    id: 3,
-    blockId: "A",
-    householdId: "A2",
-    type: "Noise",
-    description: "Excessive noise from renovation",
-    date: "2024-03-08",
-    status: "Resolved",
-  },
-  {
-    id: 4,
-    blockId: "B",
-    householdId: "B2",
-    type: "Security",
-    description: "Gate left open overnight",
-    date: "2024-03-11",
-    status: "Resolved",
-  },
-  {
-    id: 5,
-    blockId: "C",
-    householdId: "C1",
-    type: "Construction",
-    description: "Construction debris not properly disposed",
-    date: "2024-03-09",
-    status: "In Progress",
-  },
-]
-
-const initialPaymentLogsData = [
-  {
-    id: 1,
-    blockId: "A",
-    householdId: "A1",
-    type: "Utilities",
-    amount: 4400,
-    date: "2024-03-05",
-    status: "Paid",
-  },
-  {
-    id: 2,
-    blockId: "A",
-    householdId: "A2",
-    type: "Utilities",
-    amount: 3800,
-    date: "2024-03-07",
-    status: "Paid",
-  },
-  {
-    id: 3,
-    blockId: "A",
-    householdId: "A3",
-    type: "Utilities",
-    amount: 4800,
-    date: "2024-03-15",
-    status: "Overdue",
-  },
-  {
-    id: 4,
-    blockId: "B",
-    householdId: "B1",
-    type: "Utilities",
-    amount: 4200,
-    date: "2024-03-06",
-    status: "Paid",
-  },
-  {
-    id: 5,
-    blockId: "B",
-    householdId: "B2",
-    type: "Utilities",
-    amount: 3200,
-    date: "2024-03-08",
-    status: "Paid",
-  },
-]
-
-const initialNewResidentsData = [
-  {
-    id: 1,
-    name: "John Doe",
-    householdId: "A4",
-    moveInDate: "2024-03-01",
-    previousAddress: "Cebu City",
-    contactNumber: "09123456789",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    householdId: "B3",
-    moveInDate: "2024-03-05",
-    previousAddress: "Mandaue City",
-    contactNumber: "09987654321",
-  },
-  {
-    id: 3,
-    name: "Mark Johnson",
-    householdId: "C2",
-    moveInDate: "2024-03-10",
-    previousAddress: "Lapu-Lapu City",
-    contactNumber: "09456789123",
-  },
-]
-
-const initialSecurityAssignmentsData = [
-  {
-    id: 1,
-    location: "Main Entrance",
-    guard: "Robert Garcia",
-    shift: "Morning (6AM-2PM)",
-    status: "On Duty",
-  },
-  {
-    id: 2,
-    location: "Main Entrance",
-    guard: "Michael Santos",
-    shift: "Evening (2PM-10PM)",
-    status: "On Duty",
-  },
-  {
-    id: 3,
-    location: "Main Entrance",
-    guard: "James Rodriguez",
-    shift: "Night (10PM-6AM)",
-    status: "Off Duty",
-  },
-  {
-    id: 4,
-    location: "Exit 1",
-    guard: "Carlos Reyes",
-    shift: "Morning (6AM-2PM)",
-    status: "On Duty",
-  },
-  {
-    id: 5,
-    location: "Exit 1",
-    guard: "David Martinez",
-    shift: "Evening (2PM-10PM)",
-    status: "On Duty",
-  },
-  {
-    id: 6,
-    location: "Exit 2",
-    guard: "Juan Dela Cruz",
-    shift: "Morning (6AM-2PM)",
-    status: "On Duty",
-  },
-  {
-    id: 7,
-    location: "Exit 2",
-    guard: "Pedro Sanchez",
-    shift: "Evening (2PM-10PM)",
-    status: "On Duty",
-  },
-]
+// Remove the initial data arrays at the top of the file (lines 81-421) and replace with an import
+import {
+  initialBlocksData,
+  initialHouseholdsData,
+  initialIncidentsData,
+  initialPaymentLogsData,
+  initialNewResidentsData,
+  initialSecurityAssignmentsData,
+  initialUsersData,
+} from "./AdminTabs/blocks-data"
 
 const StatCard = ({ icon, title, value, description, color }: any) => {
   return (
@@ -489,7 +205,7 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [selectedBlock, setSelectedBlock] = useState<any>(null)
   const [selectedHousehold, setSelectedHousehold] = useState<any>(null)
-  const [view, setView] = useState("blocks") 
+  const [view, setView] = useState("blocks")
 
   const [blocksData, setBlocksData] = useState(initialBlocksData)
   const [householdsData, setHouseholdsData] = useState(initialHouseholdsData)
@@ -497,6 +213,21 @@ function AdminDashboard() {
   const [paymentLogsData, setPaymentLogsData] = useState(initialPaymentLogsData)
   const [newResidentsData, setNewResidentsData] = useState(initialNewResidentsData)
   const [securityAssignmentsData, setSecurityAssignmentsData] = useState(initialSecurityAssignmentsData)
+
+  // Add to the AdminDashboard component state declarations
+  const [usersData, setUsersData] = useState(initialUsersData)
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false)
+  const [newUser, setNewUser] = useState({
+    id: 0,
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    email: "",
+    referralCode: "",
+    blockId: "",
+    householdId: "",
+    userType: "customer",
+  })
 
   const [isAddHouseholdOpen, setIsAddHouseholdOpen] = useState(false)
   const [newHousehold, setNewHousehold] = useState({
@@ -514,6 +245,11 @@ function AdminDashboard() {
   const [statusNotes, setStatusNotes] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+
+  // Add these state variables to the AdminDashboard component (around line 500)
+  const [selectedGuardId, setSelectedGuardId] = useState<number | null>(null)
+  const [selectedLocation, setSelectedLocation] = useState<string>("")
+  const [selectedShift, setSelectedShift] = useState<string>("")
 
   const totalBlocks = blocksData.length
   const totalHouseholds = blocksData.reduce((sum, block) => sum + block.totalHouseholds, 0)
@@ -576,17 +312,28 @@ function AdminDashboard() {
   }
 
   const handleAddHousehold = () => {
-    if (!newHousehold.id || !newHousehold.blockId || !newHousehold.address) {
+    if (!newHousehold.blockId || !newHousehold.address) {
       toast.error("Please fill in all required fields")
       return
     }
 
-    if (householdsData.some((h) => h.id === newHousehold.id)) {
-      toast.error("Household ID already exists")
-      return
+    // Auto-increment household ID based on block
+    const blockHouseholds = householdsData.filter((h) => h.blockId === newHousehold.blockId)
+    const maxNumber =
+      blockHouseholds.length > 0 ? Math.max(...blockHouseholds.map((h) => Number.parseInt(h.id.substring(1)))) : 0
+    const newId = `${newHousehold.blockId}${maxNumber + 1}`
+
+    const householdWithDefaults = {
+      ...newHousehold,
+      id: newId,
+      occupants: 0,
+      waterConsumption: 0,
+      electricityConsumption: 0,
+      status: "Occupied",
+      paymentStatus: "Paid",
     }
 
-    const updatedHouseholds = [...householdsData, newHousehold]
+    const updatedHouseholds = [...householdsData, householdWithDefaults]
     setHouseholdsData(updatedHouseholds)
 
     const updatedBlocks = blocksData.map((block) => {
@@ -594,14 +341,18 @@ function AdminDashboard() {
         return {
           ...block,
           totalHouseholds: block.totalHouseholds + 1,
-          waterConsumption: block.waterConsumption + newHousehold.waterConsumption,
-          electricityConsumption: block.electricityConsumption + newHousehold.electricityConsumption,
+          waterConsumption: block.waterConsumption + householdWithDefaults.waterConsumption,
+          electricityConsumption: block.electricityConsumption + householdWithDefaults.electricityConsumption,
           underRenovation:
-            newHousehold.status === "Under Renovation" ? block.underRenovation + 1 : block.underRenovation,
+            householdWithDefaults.status === "Under Renovation" ? block.underRenovation + 1 : block.underRenovation,
           upcomingRenovation:
-            newHousehold.status === "Upcoming Renovation" ? block.upcomingRenovation + 1 : block.upcomingRenovation,
+            householdWithDefaults.status === "Upcoming Renovation"
+              ? block.upcomingRenovation + 1
+              : block.upcomingRenovation,
           underConstruction:
-            newHousehold.status === "Under Construction" ? block.underConstruction + 1 : block.underConstruction,
+            householdWithDefaults.status === "Under Construction"
+              ? block.underConstruction + 1
+              : block.underConstruction,
         }
       }
       return block
@@ -707,6 +458,144 @@ function AdminDashboard() {
     toast.success(`Notification sent to ${notification.recipients}`)
   }
 
+  // Add the handleAssignUser function after the handleSendNotification function in the AdminDashboard component
+  const handleAssignUser = (userId: number, blockId: string, householdId: string) => {
+    // Get the user's current household and block
+    const user = usersData.find((u) => u.id === userId)
+    if (!user) return
+
+    const oldBlockId = user.blockId
+    const oldHouseholdId = user.householdId
+
+    // Update the user's assignment
+    const updatedUsers = usersData.map((u) => {
+      if (u.id === userId) {
+        return {
+          ...u,
+          blockId: blockId,
+          householdId: householdId,
+        }
+      }
+      return u
+    })
+
+    setUsersData(updatedUsers)
+
+    // Update the household occupant count if the user was previously assigned
+    if (oldHouseholdId) {
+      const updatedHouseholds = householdsData.map((h) => {
+        if (h.id === oldHouseholdId) {
+          return {
+            ...h,
+            occupants: Math.max(0, h.occupants - 1),
+          }
+        }
+        return h
+      })
+      setHouseholdsData(updatedHouseholds)
+    }
+
+    // Update the new household occupant count
+    if (householdId) {
+      const updatedHouseholds = householdsData.map((h) => {
+        if (h.id === householdId) {
+          return {
+            ...h,
+            occupants: h.occupants + 1,
+          }
+        }
+        return h
+      })
+      setHouseholdsData(updatedHouseholds)
+    }
+
+    // Show success message
+    if (householdId) {
+      toast.success(`User assigned to ${householdId}`)
+    } else {
+      toast.success(`User unassigned from ${oldHouseholdId}`)
+    }
+  }
+
+  const handleUnassignUser = (userId: number) => {
+    handleAssignUser(userId, "", "")
+  }
+
+  // Add a function to get available households for a block
+  // Add this function after the handleUnassignUser function
+  const getAvailableHouseholds = (blockId: string) => {
+    // Generate all possible household IDs for the block (A1-A10, B1-B10, etc.)
+    return Array.from({ length: 10 }, (_, i) => {
+      const num = i + 1
+      const id = `${blockId}${num}`
+
+      // Get the current household data if it exists
+      const household = householdsData.find((h) => h.id === id)
+
+      // Count occupants assigned to this household
+      const occupantCount = usersData.filter((u) => u.householdId === id).length
+
+      return {
+        id,
+        exists: !!household,
+        occupants: occupantCount,
+        // If the household exists in our data, use that status, otherwise mark as "Available"
+        status: household ? household.status : "Available",
+      }
+    })
+  }
+
+  // Function to generate a random referral code
+  const generateReferralCode = () => {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    let referralCode = ""
+    for (let i = 0; i < 12; i++) {
+      referralCode += characters.charAt(Math.floor(Math.random() * characters.length))
+    }
+    return referralCode
+  }
+
+  // Fix the handleAssignGuard function in the AdminDashboard component (around line 1000)
+  const handleAssignGuard = (guardId: number, location: string, shift: string) => {
+    // Find the guard in the users data
+    const guard = usersData.find((u) => u.id === guardId)
+    if (!guard) {
+      toast.error("Guard not found")
+      return
+    }
+
+    // Check if there's already an assignment for this location and shift
+    const existingAssignment = securityAssignmentsData.find((a) => a.location === location && a.shift === shift)
+
+    if (existingAssignment) {
+      // Update the existing assignment
+      const updatedAssignments = securityAssignmentsData.map((a) => {
+        if (a.location === location && a.shift === shift) {
+          return {
+            ...a,
+            guard: `${guard.firstName} ${guard.lastName}`,
+            status: "On Duty",
+          }
+        }
+        return a
+      })
+      setSecurityAssignmentsData(updatedAssignments)
+    } else {
+      // Create a new assignment
+      const newId = Math.max(...securityAssignmentsData.map((a) => a.id)) + 1
+      const newAssignment = {
+        id: newId,
+        location,
+        guard: `${guard.firstName} ${guard.lastName}`,
+        shift,
+        status: "On Duty",
+      }
+      setSecurityAssignmentsData([...securityAssignmentsData, newAssignment])
+    }
+
+    toast.success(`${guard.firstName} ${guard.lastName} assigned to ${location} for ${shift}`)
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
@@ -780,6 +669,13 @@ function AdminDashboard() {
                     <SidebarMenuButton isActive={activeTab === "security"} onClick={() => setActiveTab("security")}>
                       <Shield className="h-4 w-4" />
                       <span>Security</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  {/* Add to the SidebarMenu inside the Management SidebarGroup */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton isActive={activeTab === "users"} onClick={() => setActiveTab("users")}>
+                      <Users className="h-4 w-4" />
+                      <span>Users</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
@@ -1092,103 +988,6 @@ function AdminDashboard() {
                       </CardFooter>
                     </Card>
                   </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Recent Incidents</CardTitle>
-                        <CardDescription>Latest reported incidents in the subdivision</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {incidentsData.slice(0, 4).map((incident) => (
-                            <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
-                              <div
-                                className={`p-2 rounded-full ${
-                                  incident.type === "Security"
-                                    ? "bg-red-100"
-                                    : incident.type === "Maintenance"
-                                      ? "bg-blue-100"
-                                      : incident.type === "Noise"
-                                        ? "bg-yellow-100"
-                                        : "bg-purple-100"
-                                }`}
-                              >
-                                <AlertTriangle
-                                  className={`h-4 w-4 ${
-                                    incident.type === "Security"
-                                      ? "text-red-500"
-                                      : incident.type === "Maintenance"
-                                        ? "text-blue-500"
-                                        : incident.type === "Noise"
-                                          ? "text-yellow-500"
-                                          : "text-purple-500"
-                                  }`}
-                                />
-                              </div>
-                              <div>
-                                <p className="font-medium text-sm">{incident.description}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {incident.type}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">{incident.date}</span>
-                                  <Badge
-                                    className={
-                                      incident.status === "Resolved"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-yellow-100 text-yellow-700"
-                                    }
-                                  >
-                                    {incident.status}
-                                  </Badge>
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {incident.blockId}-{incident.householdId}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setActiveTab("incidents")}>
-                          View All Incidents
-                        </Button>
-                      </CardFooter>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>New Residents</CardTitle>
-                        <CardDescription>Recently moved-in residents</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {newResidentsData.map((resident) => (
-                            <div key={resident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
-                              <Avatar>
-                                <AvatarFallback>{resident.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{resident.name}</p>
-                                <p className="text-sm text-muted-foreground">House ID: {resident.householdId}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Calendar className="h-3 w-3 text-muted-foreground" />
-                                  <span className="text-xs text-muted-foreground">Moved in: {resident.moveInDate}</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setActiveTab("residents")}>
-                          View All New Residents
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </div>
                 </TabsContent>
 
                 {/* Blocks Tab */}
@@ -1202,17 +1001,18 @@ function AdminDashboard() {
                       </Button>
                       <Dialog open={isAddHouseholdOpen} onOpenChange={setIsAddHouseholdOpen}>
                         <DialogTrigger asChild>
+                          {/* Update the button text in the blocks tab (around line 1180) */}
                           <Button className="gap-2">
                             <Plus className="h-4 w-4" />
-                            Add Block / Household
+                            View/Edit Households
                           </Button>
                         </DialogTrigger>
+                        {/* Replace the isAddHouseholdOpen dialog content (around line 1200) to remove the ability to add households
+                        and only allow viewing/editing existing ones */}
                         <DialogContent className="sm:max-w-[500px]">
                           <DialogHeader>
-                            <DialogTitle>Add New Household</DialogTitle>
-                            <DialogDescription>
-                              Enter the details for the new household to add to the system.
-                            </DialogDescription>
+                            <DialogTitle>View/Edit Household Details</DialogTitle>
+                            <DialogDescription>Select a household to view or edit its details.</DialogDescription>
                           </DialogHeader>
                           <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -1236,103 +1036,110 @@ function AdminDashboard() {
                                 </Select>
                               </div>
                               <div className="grid gap-2">
-                                <Label htmlFor="id">Household ID</Label>
-                                <Input
-                                  id="id"
-                                  name="id"
-                                  placeholder="e.g. A5"
-                                  value={newHousehold.id}
-                                  onChange={handleNewHouseholdChange}
-                                />
-                              </div>
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="address">Address</Label>
-                              <Input
-                                id="address"
-                                name="address"
-                                placeholder="e.g. A5 Sugbo St"
-                                value={newHousehold.address}
-                                onChange={handleNewHouseholdChange}
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="occupants">Occupants</Label>
-                                <Input
-                                  id="occupants"
-                                  name="occupants"
-                                  type="number"
-                                  min="0"
-                                  value={newHousehold.occupants}
-                                  onChange={handleNewHouseholdChange}
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label htmlFor="status">Status</Label>
+                                <Label htmlFor="householdId">Household</Label>
                                 <Select
-                                  name="status"
-                                  value={newHousehold.status}
-                                  onValueChange={(value) => setNewHousehold({ ...newHousehold, status: value })}
+                                  name="householdId"
+                                  value={newHousehold.id}
+                                  onValueChange={(value) => {
+                                    const household = householdsData.find((h) => h.id === value)
+                                    if (household) {
+                                      setNewHousehold(household)
+                                    }
+                                  }}
+                                  disabled={!newHousehold.blockId}
                                 >
-                                  <SelectTrigger id="status">
-                                    <SelectValue placeholder="Select status" />
+                                  <SelectTrigger id="householdId">
+                                    <SelectValue placeholder="Select household" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="Occupied">Occupied</SelectItem>
-                                    <SelectItem value="Under Renovation">Under Renovation</SelectItem>
-                                    <SelectItem value="Upcoming Renovation">Upcoming Renovation</SelectItem>
-                                    <SelectItem value="Under Construction">Under Construction</SelectItem>
-                                    <SelectItem value="Upcoming Construction">Upcoming Construction</SelectItem>
+                                    {householdsData
+                                      .filter((h) => h.blockId === newHousehold.blockId)
+                                      .map((household) => (
+                                        <SelectItem key={household.id} value={household.id}>
+                                          {household.id} - {household.status}
+                                        </SelectItem>
+                                      ))}
                                   </SelectContent>
                                 </Select>
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="waterConsumption">Water Consumption (m³)</Label>
-                                <Input
-                                  id="waterConsumption"
-                                  name="waterConsumption"
-                                  type="number"
-                                  min="0"
-                                  value={newHousehold.waterConsumption}
-                                  onChange={handleNewHouseholdChange}
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label htmlFor="electricityConsumption">Electricity (kWh)</Label>
-                                <Input
-                                  id="electricityConsumption"
-                                  name="electricityConsumption"
-                                  type="number"
-                                  min="0"
-                                  value={newHousehold.electricityConsumption}
-                                  onChange={handleNewHouseholdChange}
-                                />
-                              </div>
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="paymentStatus">Payment Status</Label>
-                              <Select
-                                name="paymentStatus"
-                                value={newHousehold.paymentStatus}
-                                onValueChange={(value) => setNewHousehold({ ...newHousehold, paymentStatus: value })}
-                              >
-                                <SelectTrigger id="paymentStatus">
-                                  <SelectValue placeholder="Select payment status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Paid">Paid</SelectItem>
-                                  <SelectItem value="Overdue">Overdue</SelectItem>
-                                  <SelectItem value="N/A">N/A</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            {newHousehold.id && (
+                              <>
+                                <div className="grid gap-2">
+                                  <Label htmlFor="address">Address</Label>
+                                  <Input
+                                    id="address"
+                                    name="address"
+                                    placeholder="e.g. A5 Sugbo St"
+                                    value={newHousehold.address}
+                                    onChange={handleNewHouseholdChange}
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid gap-2">
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select
+                                      value={newHousehold.status}
+                                      onValueChange={(value) => setNewHousehold({ ...newHousehold, status: value })}
+                                    >
+                                      <SelectTrigger id="status">
+                                        <SelectValue placeholder="Select status" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Available">Available</SelectItem>
+                                        <SelectItem value="Occupied">Occupied</SelectItem>
+                                        <SelectItem value="Under Renovation">Under Renovation</SelectItem>
+                                        <SelectItem value="Upcoming Renovation">Upcoming Renovation</SelectItem>
+                                        <SelectItem value="Under Construction">Under Construction</SelectItem>
+                                        <SelectItem value="Upcoming Construction">Upcoming Construction</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="grid gap-2">
+                                    <Label htmlFor="paymentStatus">Payment Status</Label>
+                                    <Select
+                                      value={newHousehold.paymentStatus}
+                                      onValueChange={(value) =>
+                                        setNewHousehold({ ...newHousehold, paymentStatus: value })
+                                      }
+                                    >
+                                      <SelectTrigger id="paymentStatus">
+                                        <SelectValue placeholder="Select payment status" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="N/A">N/A</SelectItem>
+                                        <SelectItem value="Paid">Paid</SelectItem>
+                                        <SelectItem value="Overdue">Overdue</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </div>
                           <DialogFooter>
-                            <Button type="submit" onClick={handleAddHousehold}>
-                              Add Household
+                            <Button
+                              type="submit"
+                              onClick={() => {
+                                if (!newHousehold.id) {
+                                  toast.error("Please select a household")
+                                  return
+                                }
+
+                                // Update the household in the state
+                                const updatedHouseholds = householdsData.map((h) => {
+                                  if (h.id === newHousehold.id) {
+                                    return newHousehold
+                                  }
+                                  return h
+                                })
+
+                                setHouseholdsData(updatedHouseholds)
+                                setIsAddHouseholdOpen(false)
+                                toast.success("Household updated successfully")
+                              }}
+                            >
+                              Update Household
                             </Button>
                           </DialogFooter>
                         </DialogContent>
@@ -2103,10 +1910,100 @@ function AdminDashboard() {
                         <Filter className="h-4 w-4" />
                         Filter
                       </Button>
-                      <Button className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Assign Guard
-                      </Button>
+                      {/* Update the security tab dialog to properly assign guards (around line 1800) */}
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            Assign Guard
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Assign Guard to Security Position</DialogTitle>
+                            <DialogDescription>Select a guard and assign them to a security position</DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4 space-y-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="guard">Select Guard</Label>
+                              <Select
+                                onValueChange={(value) => {
+                                  // Store the selected guard ID in a state variable
+                                  setSelectedGuardId(Number.parseInt(value))
+                                }}
+                              >
+                                <SelectTrigger id="guard">
+                                  <SelectValue placeholder="Select a guard" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {usersData
+                                    .filter((user) => user.userType === "guard")
+                                    .map((guard) => (
+                                      <SelectItem key={guard.id} value={guard.id.toString()}>
+                                        {guard.firstName} {guard.lastName}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label htmlFor="location">Location</Label>
+                              <Select
+                                onValueChange={(value) => {
+                                  // Store the selected location in a state variable
+                                  setSelectedLocation(value)
+                                }}
+                              >
+                                <SelectTrigger id="location">
+                                  <SelectValue placeholder="Select location" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Main Entrance">Main Entrance</SelectItem>
+                                  <SelectItem value="Exit 1">Exit 1</SelectItem>
+                                  <SelectItem value="Exit 2">Exit 2</SelectItem>
+                                  <SelectItem value="Block A">Block A</SelectItem>
+                                  <SelectItem value="Block B">Block B</SelectItem>
+                                  <SelectItem value="Block C">Block C</SelectItem>
+                                  <SelectItem value="Block D">Block D</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <Label htmlFor="shift">Shift</Label>
+                              <Select
+                                onValueChange={(value) => {
+                                  // Store the selected shift in a state variable
+                                  setSelectedShift(value)
+                                }}
+                              >
+                                <SelectTrigger id="shift">
+                                  <SelectValue placeholder="Select shift" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Morning (6AM-2PM)">Morning (6AM-2PM)</SelectItem>
+                                  <SelectItem value="Evening (2PM-10PM)">Evening (2PM-10PM)</SelectItem>
+                                  <SelectItem value="Night (10PM-6AM)">Night (10PM-6AM)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              onClick={() => {
+                                if (!selectedGuardId || !selectedLocation || !selectedShift) {
+                                  toast.error("Please select all fields")
+                                  return
+                                }
+                                handleAssignGuard(selectedGuardId, selectedLocation, selectedShift)
+                              }}
+                            >
+                              Assign Guard
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
 
@@ -2257,6 +2154,547 @@ function AdminDashboard() {
                             ))}
                         </TableBody>
                       </Table>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Guard Assignments</CardTitle>
+                      <CardDescription>Current security guard assignments</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="border rounded-md">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Location</TableHead>
+                                <TableHead>Guard</TableHead>
+                                <TableHead>Shift</TableHead>
+                                <TableHead>Status</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {securityAssignmentsData.map((assignment) => (
+                                <TableRow key={assignment.id}>
+                                  <TableCell>{assignment.location}</TableCell>
+                                  <TableCell>{assignment.guard}</TableCell>
+                                  <TableCell>{assignment.shift}</TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      className={
+                                        assignment.status === "On Duty"
+                                          ? "bg-green-100 text-green-700"
+                                          : "bg-gray-100 text-gray-700"
+                                      }
+                                    >
+                                      {assignment.status}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+
+                        <div className="mt-4">
+                          <h4 className="font-medium mb-2">Available Guards</h4>
+                          <div className="space-y-2">
+                            {usersData
+                              .filter((user) => user.userType === "guard")
+                              .map((guard) => (
+                                <div key={guard.id} className="flex items-center justify-between p-3 border rounded-md">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarFallback>
+                                        {guard.firstName.charAt(0)}
+                                        {guard.lastName.charAt(0)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <span className="font-medium">
+                                        {guard.firstName} {guard.lastName}
+                                      </span>
+                                      <span className="text-xs block text-muted-foreground">{guard.email}</span>
+                                    </div>
+                                  </div>
+                                  <Badge variant="outline">Guard</Badge>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                {/* Add the following TabsContent before the closing Tabs tag */}
+                <TabsContent value="users" className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">User Management</h2>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" className="gap-2">
+                        <Filter className="h-4 w-4" />
+                        Filter
+                      </Button>
+                      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add User
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                          <DialogHeader>
+                            <DialogTitle>Add New User</DialogTitle>
+                            <DialogDescription>
+                              Enter the details for the new user to add to the system.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="firstName">First Name</Label>
+                                <Input
+                                  id="firstName"
+                                  name="firstName"
+                                  placeholder="First Name"
+                                  value={newUser.firstName}
+                                  onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="lastName">Last Name</Label>
+                                <Input
+                                  id="lastName"
+                                  name="lastName"
+                                  placeholder="Last Name"
+                                  value={newUser.lastName}
+                                  onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="middleName">Middle Name (Optional)</Label>
+                              <Input
+                                id="middleName"
+                                name="middleName"
+                                placeholder="Middle Name"
+                                value={newUser.middleName}
+                                onChange={(e) => setNewUser({ ...newUser, middleName: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="email">Email</Label>
+                              <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="Email"
+                                value={newUser.email}
+                                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="referralCode">Referral Code (Auto-generated)</Label>
+                              <Input
+                                id="referralCode"
+                                name="referralCode"
+                                placeholder="Auto-generated on save"
+                                value={newUser.referralCode}
+                                disabled
+                                className="bg-gray-50"
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="userType">User Type</Label>
+                              <Select
+                                value={newUser.userType}
+                                onValueChange={(value) => {
+                                  setNewUser({
+                                    ...newUser,
+                                    userType: value,
+                                    // Clear block and household if changing to guard
+                                    ...(value === "guard" ? { blockId: "", householdId: "" } : {}),
+                                  })
+                                }}
+                              >
+                                <SelectTrigger id="userType">
+                                  <SelectValue placeholder="Select user type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="customer">Customer</SelectItem>
+                                  <SelectItem value="guard">Guard</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {newUser.userType === "customer" && (
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                  <Label htmlFor="blockId">Block</Label>
+                                  <Select
+                                    value={newUser.blockId}
+                                    onValueChange={(value) => {
+                                      setNewUser({ ...newUser, blockId: value, householdId: "" })
+                                    }}
+                                  >
+                                    <SelectTrigger id="blockId">
+                                      <SelectValue placeholder="Select block" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {blocksData.map((block) => (
+                                        <SelectItem key={block.id} value={block.id}>
+                                          {block.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                  <Label htmlFor="householdId">Household ID</Label>
+                                  <Select
+                                    value={newUser.householdId}
+                                    onValueChange={(value) => setNewUser({ ...newUser, householdId: value })}
+                                    disabled={!newUser.blockId}
+                                  >
+                                    <SelectTrigger id="householdId">
+                                      <SelectValue placeholder="Select household" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {newUser.blockId &&
+                                        getAvailableHouseholds(newUser.blockId).map((household) => (
+                                          <SelectItem key={household.id} value={household.id}>
+                                            {household.id} - {household.occupants} occupant(s)
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              type="submit"
+                              onClick={() => {
+                                if (!newUser.firstName || !newUser.lastName || !newUser.email || !newUser.userType) {
+                                  toast.error("Please fill in all required fields")
+                                  return
+                                }
+
+                                // For customer type, require block and household
+                                if (newUser.userType === "customer" && (!newUser.blockId || !newUser.householdId)) {
+                                  toast.error("Please select a block and household for customer users")
+                                  return
+                                }
+
+                                const newId = usersData.length > 0 ? Math.max(...usersData.map((u) => u.id)) + 1 : 1
+                                // Generate a random 12-character referral code
+                                const referralCode = generateReferralCode()
+                                const updatedUser = {
+                                  ...newUser,
+                                  id: newId,
+                                  referralCode: referralCode,
+                                }
+                                setUsersData([...usersData, updatedUser])
+
+                                // Update the household occupant count if this is a customer
+                                if (newUser.userType === "customer" && newUser.householdId) {
+                                  const household = householdsData.find((h) => h.id === newUser.householdId)
+                                  if (household) {
+                                    const updatedHouseholds = householdsData.map((h) => {
+                                      if (h.id === newUser.householdId) {
+                                        return {
+                                          ...h,
+                                          occupants: h.occupants + 1,
+                                        }
+                                      }
+                                      return h
+                                    })
+                                    setHouseholdsData(updatedHouseholds)
+                                  }
+                                }
+
+                                setNewUser({
+                                  id: 0,
+                                  firstName: "",
+                                  lastName: "",
+                                  middleName: "",
+                                  email: "",
+                                  referralCode: "",
+                                  blockId: "",
+                                  householdId: "",
+                                  userType: "customer",
+                                })
+                                setIsAddUserOpen(false)
+                                toast.success("User added successfully")
+                              }}
+                            >
+                              Add User
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+
+                  <Card>
+                    <CardContent className="pt-6">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Referral Code</TableHead>
+                            <TableHead>Block</TableHead>
+                            <TableHead>Household</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {usersData.map((user) => (
+                            <TableRow key={user.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback>
+                                      {user.firstName.charAt(0)}
+                                      {user.lastName.charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <span className="font-medium">
+                                      {user.firstName} {user.lastName}
+                                    </span>
+                                    {user.middleName && (
+                                      <span className="text-xs text-muted-foreground ml-1">({user.middleName})</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>
+                                <Badge variant={user.userType === "guard" ? "secondary" : "default"}>
+                                  {user.userType === "guard" ? "Guard" : "Customer"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{user.referralCode}</TableCell>
+                              <TableCell>{user.blockId ? `Block ${user.blockId}` : "-"}</TableCell>
+                              <TableCell>
+                                {user.householdId || (user.userType === "guard" ? "N/A" : "Unassigned")}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="ghost" size="sm">
+                                    <MessageSquare className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm">
+                                    <Info className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Household Management</CardTitle>
+                      <CardDescription>Manage household occupants and assignments</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button className="w-full">
+                            <Home className="h-4 w-4 mr-2" />
+                            Manage Household Occupants
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl">
+                          <DialogHeader>
+                            <DialogTitle>Household Occupants</DialogTitle>
+                            <DialogDescription>View and manage occupants assigned to households</DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4">
+                            <div className="grid gap-4">
+                              <div>
+                                <Label className="mb-2 block">Select Block</Label>
+                                <Select
+                                  value={selectedBlock?.id || ""}
+                                  onValueChange={(value) => {
+                                    const block = blocksData.find((b) => b.id === value)
+                                    setSelectedBlock(block)
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a block" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {blocksData.map((block) => (
+                                      <SelectItem key={block.id} value={block.id}>
+                                        {block.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+
+                                {selectedBlock && (
+                                  <div className="mt-4">
+                                    <h4 className="font-medium mb-2">Households in {selectedBlock.name}</h4>
+                                    <div className="grid gap-2 max-h-[400px] overflow-y-auto">
+                                      {getAvailableHouseholds(selectedBlock.id).map((household) => {
+                                        const occupants = usersData.filter(
+                                          (user) => user.householdId === household.id && user.userType === "customer",
+                                        )
+                                        const householdData = householdsData.find((h) => h.id === household.id)
+
+                                        return (
+                                          <Card
+                                            key={household.id}
+                                            className={`p-3 ${household.status !== "Occupied" && household.status !== "Available" ? "bg-gray-50" : ""}`}
+                                          >
+                                            <div className="flex justify-between items-center">
+                                              <div>
+                                                <div className="flex items-center">
+                                                  <span className="font-medium">{household.id}</span>
+                                                  {householdData && householdData.status !== "Occupied" && (
+                                                    <Badge variant="outline" className="ml-2 text-xs">
+                                                      {householdData.status}
+                                                    </Badge>
+                                                  )}
+                                                </div>
+                                                <span className="text-sm text-muted-foreground block">
+                                                  {occupants.length} occupant{occupants.length !== 1 ? "s" : ""}
+                                                </span>
+                                                {occupants.length > 0 && (
+                                                  <div className="mt-1 text-xs text-muted-foreground">
+                                                    {occupants.map((u) => `${u.firstName} ${u.lastName}`).join(", ")}
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <Dialog>
+                                                <DialogTrigger asChild>
+                                                  <Button variant="outline" size="sm">
+                                                    <UserPlus className="h-4 w-4 mr-2" />
+                                                    Assign
+                                                  </Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                  <DialogHeader>
+                                                    <DialogTitle>Assign Occupants to {household.id}</DialogTitle>
+                                                    <DialogDescription>
+                                                      Select users to assign to this household
+                                                    </DialogDescription>
+                                                  </DialogHeader>
+                                                  <div className="py-4">
+                                                    <div className="max-h-[300px] overflow-y-auto border rounded-md">
+                                                      {usersData
+                                                        .filter((user) => user.userType === "customer") // Only show customers
+                                                        .map((user) => (
+                                                          <div
+                                                            key={user.id}
+                                                            className="flex items-center justify-between p-3 border-b last:border-0"
+                                                          >
+                                                            <div className="flex items-center gap-2">
+                                                              <Avatar className="h-8 w-8">
+                                                                <AvatarFallback>
+                                                                  {user.firstName.charAt(0)}
+                                                                  {user.lastName.charAt(0)}
+                                                                </AvatarFallback>
+                                                              </Avatar>
+                                                              <div>
+                                                                <span className="font-medium">
+                                                                  {user.firstName} {user.lastName}
+                                                                </span>
+                                                                <span className="text-xs block text-muted-foreground">
+                                                                  {user.email}
+                                                                </span>
+                                                                {user.householdId &&
+                                                                  user.householdId !== household.id && (
+                                                                    <span className="text-xs text-amber-600">
+                                                                      Currently assigned to {user.householdId}
+                                                                    </span>
+                                                                  )}
+                                                              </div>
+                                                            </div>
+                                                            <Button
+                                                              variant={
+                                                                user.householdId === household.id
+                                                                  ? "default"
+                                                                  : "outline"
+                                                              }
+                                                              size="sm"
+                                                              onClick={() =>
+                                                                handleAssignUser(
+                                                                  user.id,
+                                                                  selectedBlock.id,
+                                                                  household.id,
+                                                                )
+                                                              }
+                                                            >
+                                                              {user.householdId === household.id
+                                                                ? "Assigned"
+                                                                : "Assign"}
+                                                            </Button>
+                                                          </div>
+                                                        ))}
+                                                    </div>
+                                                  </div>
+                                                </DialogContent>
+                                              </Dialog>
+                                            </div>
+                                          </Card>
+                                        )
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Security Guards</CardTitle>
+                      <CardDescription>View security guards in the system</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          {usersData
+                            .filter((user) => user.userType === "guard")
+                            .map((guard) => (
+                              <div key={guard.id} className="flex items-center justify-between p-3 border rounded-md">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback>
+                                      {guard.firstName.charAt(0)}
+                                      {guard.lastName.charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <span className="font-medium">
+                                      {guard.firstName} {guard.lastName}
+                                    </span>
+                                    <span className="text-xs block text-muted-foreground">{guard.email}</span>
+                                  </div>
+                                </div>
+                                <Badge variant="outline">Guard</Badge>
+                              </div>
+                            ))}
+                          {usersData.filter((user) => user.userType === "guard").length === 0 && (
+                            <div className="text-center py-4 text-muted-foreground">
+                              No security guards in the system
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
