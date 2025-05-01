@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import {
   Bell,
@@ -23,6 +21,7 @@ import {
   Users,
   Zap,
   AlertTriangle,
+  Check,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -437,6 +436,7 @@ function AdminDashboard() {
 
         console.log("Incident added successfully:", newIncident)
         toast.success("Incident reported successfully and saved to database")
+        fetchIncidents()
       }
     } catch (error) {
       console.error("Error adding incident:", error)
@@ -556,55 +556,70 @@ function AdminDashboard() {
     }
   }
 
-  const handleAssignUser = (userId: number, blockId: string, householdId: string) => {
+  const handleAssignUser = async (userId: number, blockId: string, householdId: string) => {
     const user = usersData.find((u) => u.id === userId)
     if (!user) return
 
     const oldHouseholdId = user.householdId
 
-    const updatedUsers = usersData.map((u) => {
-      if (u.id === userId) {
-        return {
-          ...u,
-          blockId: blockId,
-          householdId: householdId,
-        }
+    try {
+      const userData = {
+        userId: userId,
+        block: blockId,
+        hid: householdId,
       }
-      return u
-    })
 
-    setUsersData(updatedUsers)
+      // const response = await axios.post("http://localhost:3004/post/updateUserHousehold", userData)
 
-    if (oldHouseholdId) {
-      const updatedHouseholds = householdsData.map((h) => {
-        if (h.id === oldHouseholdId) {
+      const updatedUsers = usersData.map((u) => {
+        if (u.id === userId) {
           return {
-            ...h,
-            occupants: Math.max(0, h.occupants - 1),
+            ...u,
+            blockId: blockId,
+            householdId: householdId,
           }
         }
-        return h
+        return u
       })
-      setHouseholdsData(updatedHouseholds)
-    }
 
-    if (householdId) {
-      const updatedHouseholds = householdsData.map((h) => {
-        if (h.id === householdId) {
-          return {
-            ...h,
-            occupants: h.occupants + 1,
+      setUsersData(updatedUsers)
+
+      if (oldHouseholdId) {
+        const updatedHouseholds = householdsData.map((h) => {
+          if (h.id === oldHouseholdId) {
+            return {
+              ...h,
+              occupants: Math.max(0, h.occupants - 1),
+            }
           }
-        }
-        return h
-      })
-      setHouseholdsData(updatedHouseholds)
-    }
+          return h
+        })
+        setHouseholdsData(updatedHouseholds)
+      }
 
-    if (householdId) {
-      toast.success(`User assigned to ${householdId}`)
-    } else {
-      toast.success(`User unassigned from ${oldHouseholdId}`)
+      if (householdId) {
+        const updatedHouseholds = householdsData.map((h) => {
+          if (h.id === householdId) {
+            return {
+              ...h,
+              occupants: h.occupants + 1,
+            }
+          }
+          return h
+        })
+        setHouseholdsData(updatedHouseholds)
+      }
+
+      if (householdId) {
+        toast.success(`User assigned to ${householdId}`)
+      } else {
+        toast.success(`User unassigned from ${oldHouseholdId}`)
+      }
+
+      fetchUsers()
+    } catch (error) {
+      console.error("Error assigning user:", error)
+      toast.error("Failed to assign user")
     }
   }
 
@@ -671,6 +686,30 @@ function AdminDashboard() {
     toast.success(`${guard.firstName} ${guard.lastName} assigned to ${location} for ${shift}`)
   }
 
+  interface userDatas {
+    u_id: number
+    u_firstname: string
+    u_lastname: string
+    u_middlename: string
+    u_email: string
+    u_refs: string
+    u_type: string
+    u_block: string
+    u_status: string
+  }
+
+  const [userDatas, setUserDatas] = useState<userDatas>({
+    u_id: 0,
+    u_firstname: "",
+    u_lastname: "",
+    u_middlename: "",
+    u_email: "",
+    u_refs: "",
+    u_type: "",
+    u_block: "",
+    u_status: "",
+  })
+
   const fetchGuards = async () => {
     try {
       const response = await axios.get("http://localhost:3004/get/guards")
@@ -681,19 +720,130 @@ function AdminDashboard() {
       } else {
         console.error("Failed to fetch guards:", response.data)
         toast.error("Failed to fetch guards")
-        setGuardsData([]) 
+        setGuardsData([])
       }
     } catch (error) {
       console.error("Error fetching guards:", error)
       toast.error("Failed to fetch guards")
-      setGuardsData([]) 
+      setGuardsData([])
     }
   }
 
   useEffect(() => {
     console.log("Fetching guards...")
     fetchGuards()
+    fetchUsers()
   }, [])
+
+  const [apiUsersData, setApiUsersData] = useState<any[]>([])
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+
+  const fetchUsers = async () => {
+    try {
+      setIsLoadingUsers(true)
+      const response = await axios.get("http://localhost:3004/get/users")
+
+      if (response.data && response.data.success) {
+        console.log("Fetched users:", response.data.users)
+        setApiUsersData(response.data.users)
+      } else {
+        console.error("Failed to fetch users:", response.data)
+        toast.error("Failed to fetch users")
+        setApiUsersData([])
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error)
+      toast.error("Failed to fetch users")
+      setApiUsersData([])
+    } finally {
+      setIsLoadingUsers(false)
+    }
+  }
+
+  const [apiIncidentsData, setApiIncidentsData] = useState<any[]>([])
+  const [isLoadingIncidents, setIsLoadingIncidents] = useState(false)
+  const [isUpdatingIncidentStatus, setIsUpdatingIncidentStatus] = useState<number | null>(null)
+
+  const fetchIncidents = async () => {
+    try {
+      setIsLoadingIncidents(true)
+      const response = await axios.get("http://localhost:3004/get/fetchIncident")
+
+      if (response.data && response.data.success) {
+        console.log("Fetched incidents:", response.data.users)
+        setApiIncidentsData(response.data.users)
+      } else {
+        console.error("Failed to fetch incidents:", response.data)
+        toast.error("Failed to fetch incidents")
+        setApiIncidentsData([])
+      }
+    } catch (error) {
+      console.error("Error fetching incidents:", error)
+      toast.error("Failed to fetch incidents")
+      setApiIncidentsData([])
+    } finally {
+      setIsLoadingIncidents(false)
+    }
+  }
+
+  const handleUpdateIncidentStatus = async (incidentId: number) => {
+    try {
+      setIsUpdatingIncidentStatus(incidentId)
+      const response = await axios.post("http://localhost:3004/post/updateIncidentStatus", { incidentId })
+
+      if (response.data && response.data.success) {
+        // Update the local state
+        setApiIncidentsData(prevData => 
+          prevData.map(incident => 
+            incident.i_id === incidentId 
+              ? { ...incident, i_status: 'Resolved' } 
+              : incident
+          )
+        )
+        toast.success("Incident marked as resolved")
+      } else {
+        toast.error("Failed to update incident status")
+      }
+    } catch (error) {
+      console.error("Error updating incident status:", error)
+      toast.error("Failed to update incident status")
+    } finally {
+      setIsUpdatingIncidentStatus(null)
+    }
+  }
+
+  const formatIncidentDate = (dateString: string) => {
+    if (!dateString) return "N/A"
+    
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return dateString 
+      
+      const month = date.toLocaleString('en-US', { month: 'short' })
+      const day = date.getDate()
+      const year = date.getFullYear()
+      
+      return `${month}, ${day}, ${year}`
+    } catch (error) {
+      console.error("Error formatting date:", error)
+      return dateString 
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "users") {
+      console.log("Fetching users...")
+      fetchUsers()
+      fetchGuards()
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    if (activeTab === "incidents") {
+      console.log("Fetching incidents...")
+      fetchIncidents()
+    }
+  }, [activeTab])
 
   return (
     <SidebarProvider>
@@ -1399,8 +1549,6 @@ function AdminDashboard() {
                           <SelectItem value="in-progress">In Progress</SelectItem>
                         </SelectContent>
                       </Select>
-                      {/* Replace the incident form dialog content with this updated version that uses state
-                      // Find the incident form in the "Incidents Tab" section (around line 1600) */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="gap-2">
@@ -1556,34 +1704,66 @@ function AdminDashboard() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {incidentsData.map((incident) => (
-                            <TableRow key={incident.id}>
-                              <TableCell>{incident.date}</TableCell>
-                              <TableCell>
-                                {incident.blockId}-{incident.householdId}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{incident.type}</Badge>
-                              </TableCell>
-                              <TableCell>{incident.description}</TableCell>
-                              <TableCell>
-                                <Badge
-                                  className={
-                                    incident.status === "Resolved"
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-yellow-100 text-yellow-700"
-                                  }
-                                >
-                                  {incident.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button variant="ghost" size="sm">
-                                  View
-                                </Button>
+                          {isLoadingIncidents ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8">
+                                <div className="flex justify-center items-center">
+                                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                  <span className="ml-2">Loading incidents...</span>
+                                </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          ) : apiIncidentsData.length > 0 ? (
+                            apiIncidentsData.map((incident, index) => (
+                              <TableRow key={incident.i_id || index}>
+                                <TableCell>{formatIncidentDate(incident.i_date)}</TableCell>
+                                <TableCell>
+                                  {incident.i_hid}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">{incident.i_type || "Other"}</Badge>
+                                </TableCell>
+                                <TableCell>{incident.i_description}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    className={
+                                      incident.i_status === "Resolved"
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-yellow-100 text-yellow-700"
+                                    }
+                                  >
+                                    {incident.i_status || "In Progress"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {incident.i_status !== "Resolved" ? (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="gap-1"
+                                      onClick={() => handleUpdateIncidentStatus(incident.i_id)}
+                                      disabled={isUpdatingIncidentStatus === incident.i_id}
+                                    >
+                                      {isUpdatingIncidentStatus === incident.i_id ? (
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
+                                      ) : (
+                                        <Check className="h-4 w-4 mr-1" />
+                                      )}
+                                      Mark as Resolved
+                                    </Button>
+                                  ) : (
+                                    <Badge className="bg-green-100 text-green-700">Resolved</Badge>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8">
+                                No incidents found. Report a new incident to get started.
+                              </TableCell>
+                            </TableRow>
+                          )}
                         </TableBody>
                       </Table>
                     </CardContent>
@@ -2254,6 +2434,7 @@ function AdminDashboard() {
                                       userType: "customer",
                                     })
                                     setIsAddUserOpen(false)
+                                    fetchUsers()
                                     fetchGuards()
                                     toast.success("User added successfully to database")
                                   }
@@ -2293,50 +2474,66 @@ function AdminDashboard() {
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
+                        {/* Find the TableBody in the Users tab section and replace it with this: */}
                         <TableBody>
-                          {usersData.map((user) => (
-                            <TableRow key={user.id}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarFallback>
-                                      {user.firstName.charAt(0)}
-                                      {user.lastName.charAt(0)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <span className="font-medium">
-                                      {user.firstName} {user.lastName}
-                                    </span>
-                                    {user.middleName && (
-                                      <span className="text-xs text-muted-foreground ml-1">({user.middleName})</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>{user.email}</TableCell>
-                              <TableCell>
-                                <Badge variant={user.userType === "guard" ? "secondary" : "default"}>
-                                  {user.userType === "guard" ? "Guard" : "Customer"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{user.referralCode}</TableCell>
-                              <TableCell>{user.blockId ? `Block ${user.blockId}` : "-"}</TableCell>
-                              <TableCell>
-                                {user.householdId || (user.userType === "guard" ? "N/A" : "Unassigned")}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button variant="ghost" size="sm">
-                                    <MessageSquare className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="sm">
-                                    <Info className="h-4 w-4" />
-                                  </Button>
+                          {isLoadingUsers ? (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-8">
+                                <div className="flex justify-center items-center">
+                                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                  <span className="ml-2">Loading users...</span>
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          ) : apiUsersData.length > 0 ? (
+                            apiUsersData.map((user) => (
+                              <TableRow key={user.u_id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarFallback>
+                                        {user.u_fn?.charAt(0) || ""}
+                                        {user.u_ln?.charAt(0) || ""}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <span className="font-medium">
+                                        {user.u_fn} {user.u_ln}
+                                      </span>
+                                      {user.u_mi && (
+                                        <span className="text-xs text-muted-foreground ml-1">({user.u_mi})</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{user.u_email}</TableCell>
+                                <TableCell>
+                                  <Badge variant={user.u_type === "guard" ? "secondary" : "default"}>
+                                    {user.u_type === "guard" ? "Guard" : "Customer"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>{user.u_refs}</TableCell>
+                                <TableCell>{user.u_block ? `Block ${user.u_block}` : "-"}</TableCell>
+                                <TableCell>{user.u_hid || (user.u_type === "guard" ? "N/A" : "Unassigned")}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button variant="ghost" size="sm">
+                                      <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm">
+                                      <Info className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-8">
+                                No users found. Add a new user to get started.
+                              </TableCell>
+                            </TableRow>
+                          )}
                         </TableBody>
                       </Table>
                     </CardContent>
@@ -2411,11 +2608,6 @@ function AdminDashboard() {
                                                 <span className="text-sm text-muted-foreground block">
                                                   {occupants.length} occupant{occupants.length !== 1 ? "s" : ""}
                                                 </span>
-                                                {occupants.length > 0 && (
-                                                  <div className="mt-1 text-xs text-muted-foreground">
-                                                    {occupants.map((u) => `${u.firstName} ${u.lastName}`).join(", ")}
-                                                  </div>
-                                                )}
                                               </div>
                                               <Dialog>
                                                 <DialogTrigger asChild>
