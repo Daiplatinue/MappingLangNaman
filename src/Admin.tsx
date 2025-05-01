@@ -1,4 +1,6 @@
-import { useState } from "react"
+"use client"
+
+import { useEffect, useState } from "react"
 import {
   Bell,
   Building,
@@ -198,6 +200,7 @@ const HouseholdCard = ({ household, onClick, isActive }: any) => {
 }
 
 function AdminDashboard() {
+  const [guardsData, setGuardsData] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("dashboard")
   const [selectedBlock, setSelectedBlock] = useState<any>(null)
   const [selectedHousehold, setSelectedHousehold] = useState<any>(null)
@@ -276,6 +279,8 @@ function AdminDashboard() {
     type: "",
     description: "",
   })
+
+  const [isSubmittingIncident, setIsSubmittingIncident] = useState(false)
 
   const [constructionForm, setConstructionForm] = useState({
     blockId: "",
@@ -385,81 +390,7 @@ function AdminDashboard() {
     toast.success("Household status updated successfully")
   }
 
-  const handleAddConstruction = (construction: any) => {
-    console.log("Construction data received:", construction)
-
-    if (!construction.householdId || !construction.status || !construction.startDate) {
-      console.error("Construction validation failed:", {
-        householdId: construction.householdId,
-        status: construction.status,
-        startDate: construction.startDate,
-      })
-      toast.error("Please fill in all required fields")
-      return
-    }
-
-    const household = householdsData.find((h) => h.id === construction.householdId)
-    if (!household) {
-      console.error("Household not found for ID:", construction.householdId)
-      toast.error("Household not found")
-      return
-    }
-
-    try {
-      const updatedHouseholds = householdsData.map((h) => {
-        if (h.id === construction.householdId) {
-          return {
-            ...h,
-            status: construction.status,
-          }
-        }
-        return h
-      })
-      setHouseholdsData(updatedHouseholds)
-
-      const updatedBlocks = blocksData.map((block) => {
-        if (block.id === household.blockId) {
-          let newUnderRenovation = block.underRenovation
-          let newUpcomingRenovation = block.upcomingRenovation
-          let newUnderConstruction = block.underConstruction
-
-          if (construction.status === "Under Renovation") newUnderRenovation++
-          else if (construction.status === "Upcoming Renovation") newUpcomingRenovation++
-          else if (construction.status === "Under Construction") newUnderConstruction++
-
-          return {
-            ...block,
-            underRenovation: newUnderRenovation,
-            upcomingRenovation: newUpcomingRenovation,
-            underConstruction: newUnderConstruction,
-          }
-        }
-        return block
-      })
-      setBlocksData(updatedBlocks)
-
-      // Create and send a notification about the new construction
-      const notification = {
-        type: "maintenance",
-        recipients: `block-${household.blockId.toLowerCase()}`,
-        subject: `New ${construction.status} at ${construction.householdId}`,
-        message: `${construction.status} will begin at ${construction.householdId} on ${construction.startDate}. Expected completion: ${construction.endDate || "To be determined"}`,
-        priority: "normal",
-      }
-      handleSendNotification(notification)
-
-      console.log("Construction added successfully:", construction)
-      toast.success(`${construction.status} added successfully`)
-    } catch (error) {
-      console.error("Error adding construction:", error)
-      toast.error("Failed to add construction")
-    }
-  }
-
-  // In the handleAddIncident function, add detailed error logging
-  const handleAddIncident = (incident: any) => {
-    console.log("Incident data received:", incident)
-
+  const handleAddIncident = async (incident: any) => {
     if (!incident.blockId || !incident.householdId || !incident.type || !incident.description) {
       console.error("Incident validation failed:", {
         blockId: incident.blockId,
@@ -472,43 +403,120 @@ function AdminDashboard() {
     }
 
     try {
-      const newId = Math.max(...incidentsData.map((i) => i.id)) + 1
-      const newIncident = {
-        ...incident,
-        id: newId,
-        date: new Date().toISOString().split("T")[0],
-        status: "In Progress",
+      const incidentData = {
+        block: incident.blockId,
+        hid: incident.householdId,
+        type: incident.type,
+        description: incident.description,
       }
 
-      console.log("New incident to be added:", newIncident)
-      setIncidentsData([...incidentsData, newIncident])
+      const response = await axios.post("http://localhost:3004/post/incident", incidentData)
 
-      const updatedBlocks = blocksData.map((block) => {
-        if (block.id === incident.blockId) {
-          return {
-            ...block,
-            incidents: block.incidents + 1,
-          }
+      if (response.status === 201) {
+        const newId = incidentsData.length > 0 ? Math.max(...incidentsData.map((i) => i.id)) + 1 : 1
+        const newIncident = {
+          ...incident,
+          id: newId,
+          date: new Date().toISOString().split("T")[0],
+          status: "In Progress",
         }
-        return block
-      })
-      setBlocksData(updatedBlocks)
 
-      // Create and send a notification about the new incident
-      const notification = {
-        type: "emergency",
-        recipients: `block-${incident.blockId.toLowerCase()}`,
-        subject: `New ${incident.type} Incident Reported`,
-        message: `A new ${incident.type.toLowerCase()} incident has been reported: ${incident.description}`,
-        priority: "high",
+        console.log("New incident to be added:", newIncident)
+        setIncidentsData([...incidentsData, newIncident])
+
+        const updatedBlocks = blocksData.map((block) => {
+          if (block.id === incident.blockId) {
+            return {
+              ...block,
+              incidents: block.incidents + 1,
+            }
+          }
+          return block
+        })
+        setBlocksData(updatedBlocks)
+
+        console.log("Incident added successfully:", newIncident)
+        toast.success("Incident reported successfully and saved to database")
       }
-      handleSendNotification(notification)
-
-      console.log("Incident added successfully:", newIncident)
-      toast.success("Incident reported successfully")
     } catch (error) {
       console.error("Error adding incident:", error)
-      toast.error("Failed to report incident")
+      toast.error("Failed to report incident to database")
+    }
+  }
+
+  const handleAddConstruction = async (construction: any) => {
+    if (!construction.householdId || !construction.status || !construction.startDate) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    const household = householdsData.find((h) => h.id === construction.householdId)
+    if (!household) {
+      toast.error("Household not found")
+      return
+    }
+
+    try {
+      const constructionData = {
+        block: construction.blockId,
+        hid: construction.householdId,
+        status: construction.status,
+        startDate: construction.startDate,
+        endDate: construction.endDate || null,
+      }
+
+      const response = await axios.post("http://localhost:3004/post/construction", constructionData)
+
+      if (response.status === 201) {
+        const updatedHouseholds = householdsData.map((h) => {
+          if (h.id === construction.householdId) {
+            return {
+              ...h,
+              status: construction.status,
+            }
+          }
+          return h
+        })
+        setHouseholdsData(updatedHouseholds)
+
+        const updatedBlocks = blocksData.map((block) => {
+          if (block.id === household.blockId) {
+            let newUnderRenovation = block.underRenovation
+            let newUpcomingRenovation = block.upcomingRenovation
+            let newUnderConstruction = block.underConstruction
+
+            if (construction.status === "Under Renovation") newUnderRenovation++
+            else if (construction.status === "Upcoming Renovation") newUpcomingRenovation++
+            else if (construction.status === "Under Construction") newUnderConstruction++
+
+            return {
+              ...block,
+              underRenovation: newUnderRenovation,
+              upcomingRenovation: newUpcomingRenovation,
+              underConstruction: newUnderConstruction,
+            }
+          }
+          return block
+        })
+        setBlocksData(updatedBlocks)
+
+        toast.success(`${construction.status} added successfully`)
+
+        setConstructionForm({
+          blockId: "",
+          householdId: "",
+          status: "",
+          startDate: "",
+          endDate: "",
+        })
+
+        document
+          .querySelector('[role="dialog"]')
+          ?.closest('div[data-state="open"]')
+          ?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))
+      }
+    } catch (error) {
+      toast.error("Failed to add construction")
     }
   }
 
@@ -529,10 +537,8 @@ function AdminDashboard() {
 
     setNotificationsData([newNotification, ...notificationsData])
 
-    // Show toast notification
     toast.success(`Notification sent to ${notification.recipients}`)
 
-    // Show browser notification if supported
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification(notification.subject, {
         body: notification.message,
@@ -550,15 +556,12 @@ function AdminDashboard() {
     }
   }
 
-  // Add the handleAssignUser function after the handleSendNotification function in the AdminDashboard component
   const handleAssignUser = (userId: number, blockId: string, householdId: string) => {
-    // Get the user's current household and block
     const user = usersData.find((u) => u.id === userId)
     if (!user) return
 
     const oldHouseholdId = user.householdId
 
-    // Update the user's assignment
     const updatedUsers = usersData.map((u) => {
       if (u.id === userId) {
         return {
@@ -572,7 +575,6 @@ function AdminDashboard() {
 
     setUsersData(updatedUsers)
 
-    // Update the household occupant count if the user was previously assigned
     if (oldHouseholdId) {
       const updatedHouseholds = householdsData.map((h) => {
         if (h.id === oldHouseholdId) {
@@ -607,28 +609,23 @@ function AdminDashboard() {
   }
 
   const getAvailableHouseholds = (blockId: string) => {
-    // Generate all possible household IDs for the block (A1-A10, B1-B10, etc.)
     return Array.from({ length: 10 }, (_, i) => {
       const num = i + 1
       const id = `${blockId}${num}`
 
-      // Get the current household data if it exists
       const household = householdsData.find((h) => h.id === id)
 
-      // Count occupants assigned to this household
       const occupantCount = usersData.filter((u) => u.householdId === id).length
 
       return {
         id,
         exists: !!household,
         occupants: occupantCount,
-        // If the household exists in our data, use that status, otherwise mark as "Available"
         status: household ? household.status : "Available",
       }
     })
   }
 
-  // Function to generate a random referral code
   const generateReferralCode = () => {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     let referralCode = ""
@@ -638,20 +635,16 @@ function AdminDashboard() {
     return referralCode
   }
 
-  // Fix the handleAssignGuard function in the AdminDashboard component (around line 1000)
   const handleAssignGuard = (guardId: number, location: string, shift: string) => {
-    // Find the guard in the users data
     const guard = usersData.find((u) => u.id === guardId)
     if (!guard) {
       toast.error("Guard not found")
       return
     }
 
-    // Check if there's already an assignment for this location and shift
     const existingAssignment = securityAssignmentsData.find((a) => a.location === location && a.shift === shift)
 
     if (existingAssignment) {
-      // Update the existing assignment
       const updatedAssignments = securityAssignmentsData.map((a) => {
         if (a.location === location && a.shift === shift) {
           return {
@@ -664,7 +657,6 @@ function AdminDashboard() {
       })
       setSecurityAssignmentsData(updatedAssignments)
     } else {
-      // Create a new assignment
       const newId = Math.max(...securityAssignmentsData.map((a) => a.id)) + 1
       const newAssignment = {
         id: newId,
@@ -678,7 +670,31 @@ function AdminDashboard() {
 
     toast.success(`${guard.firstName} ${guard.lastName} assigned to ${location} for ${shift}`)
   }
-  
+
+  const fetchGuards = async () => {
+    try {
+      const response = await axios.get("http://localhost:3004/get/guards")
+
+      if (response.data && response.data.success) {
+        console.log("Fetched guards:", response.data.guards)
+        setGuardsData(response.data.guards)
+      } else {
+        console.error("Failed to fetch guards:", response.data)
+        toast.error("Failed to fetch guards")
+        setGuardsData([]) 
+      }
+    } catch (error) {
+      console.error("Error fetching guards:", error)
+      toast.error("Failed to fetch guards")
+      setGuardsData([]) 
+    }
+  }
+
+  useEffect(() => {
+    console.log("Fetching guards...")
+    fetchGuards()
+  }, [])
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
@@ -1424,16 +1440,27 @@ function AdminDashboard() {
                                 <Select
                                   value={incidentForm.householdId}
                                   onValueChange={(value) => setIncidentForm({ ...incidentForm, householdId: value })}
+                                  disabled={!incidentForm.blockId}
                                 >
                                   <SelectTrigger id="incident-household">
-                                    <SelectValue placeholder="Select household" />
+                                    <SelectValue
+                                      placeholder={incidentForm.blockId ? "Select household" : "Select a block first"}
+                                    />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {householdsData.map((household) => (
-                                      <SelectItem key={household.id} value={household.id}>
-                                        {household.id} - {household.address}
+                                    {incidentForm.blockId ? (
+                                      householdsData
+                                        .filter((household) => household.blockId === incidentForm.blockId)
+                                        .map((household) => (
+                                          <SelectItem key={household.id} value={household.id}>
+                                            {household.id} - {household.address}
+                                          </SelectItem>
+                                        ))
+                                    ) : (
+                                      <SelectItem value="placeholder" disabled>
+                                        Select a block first
                                       </SelectItem>
-                                    ))}
+                                    )}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1470,7 +1497,8 @@ function AdminDashboard() {
                           <DialogFooter>
                             <Button
                               type="submit"
-                              onClick={() => {
+                              disabled={isSubmittingIncident}
+                              onClick={async () => {
                                 console.log("Submitting incident with data:", incidentForm)
 
                                 if (
@@ -1484,18 +1512,29 @@ function AdminDashboard() {
                                   return
                                 }
 
-                                handleAddIncident(incidentForm)
+                                setIsSubmittingIncident(true)
+                                try {
+                                  await handleAddIncident(incidentForm)
 
-                                // Reset form
-                                setIncidentForm({
-                                  blockId: "",
-                                  householdId: "",
-                                  type: "",
-                                  description: "",
-                                })
+                                  setIncidentForm({
+                                    blockId: "",
+                                    householdId: "",
+                                    type: "",
+                                    description: "",
+                                  })
+                                } finally {
+                                  setIsSubmittingIncident(false)
+                                }
                               }}
                             >
-                              Report Incident
+                              {isSubmittingIncident ? (
+                                <>
+                                  <span className="mr-2">Reporting...</span>
+                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                                </>
+                              ) : (
+                                "Report Incident"
+                              )}
                             </Button>
                           </DialogFooter>
                         </DialogContent>
@@ -1610,16 +1649,29 @@ function AdminDashboard() {
                                   onValueChange={(value) =>
                                     setConstructionForm({ ...constructionForm, householdId: value })
                                   }
+                                  disabled={!constructionForm.blockId}
                                 >
                                   <SelectTrigger id="construction-household">
-                                    <SelectValue placeholder="Select household" />
+                                    <SelectValue
+                                      placeholder={
+                                        constructionForm.blockId ? "Select household" : "Select a block first"
+                                      }
+                                    />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {householdsData.map((household) => (
-                                      <SelectItem key={household.id} value={household.id}>
-                                        {household.id} - {household.address}
+                                    {constructionForm.blockId ? (
+                                      householdsData
+                                        .filter((household) => household.blockId === constructionForm.blockId)
+                                        .map((household) => (
+                                          <SelectItem key={household.id} value={household.id}>
+                                            {household.id} - {household.address}
+                                          </SelectItem>
+                                        ))
+                                    ) : (
+                                      <SelectItem value="placeholder" disabled>
+                                        Select a block first
                                       </SelectItem>
-                                    ))}
+                                    )}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1763,7 +1815,6 @@ function AdminDashboard() {
                         <Filter className="h-4 w-4" />
                         Filter
                       </Button>
-                      {/* Update the security tab dialog to properly assign guards (around line 1800) */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="gap-2">
@@ -1781,7 +1832,6 @@ function AdminDashboard() {
                               <Label htmlFor="guard">Select Guard</Label>
                               <Select
                                 onValueChange={(value) => {
-                                  // Store the selected guard ID in a state variable
                                   setSelectedGuardId(Number.parseInt(value))
                                 }}
                               >
@@ -1815,10 +1865,6 @@ function AdminDashboard() {
                                   <SelectItem value="Main Entrance">Main Entrance</SelectItem>
                                   <SelectItem value="Exit 1">Exit 1</SelectItem>
                                   <SelectItem value="Exit 2">Exit 2</SelectItem>
-                                  <SelectItem value="Block A">Block A</SelectItem>
-                                  <SelectItem value="Block B">Block B</SelectItem>
-                                  <SelectItem value="Block C">Block C</SelectItem>
-                                  <SelectItem value="Block D">Block D</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -1827,7 +1873,6 @@ function AdminDashboard() {
                               <Label htmlFor="shift">Shift</Label>
                               <Select
                                 onValueChange={(value) => {
-                                  // Store the selected shift in a state variable
                                   setSelectedShift(value)
                                 }}
                               >
@@ -1961,69 +2006,33 @@ function AdminDashboard() {
                     </Card>
                   </div>
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Guard Assignments</CardTitle>
-                      <CardDescription>Current security guard assignments</CardDescription>
-                    </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        <div className="border rounded-md">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Location</TableHead>
-                                <TableHead>Guard</TableHead>
-                                <TableHead>Shift</TableHead>
-                                <TableHead>Status</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {securityAssignmentsData.map((assignment) => (
-                                <TableRow key={assignment.id}>
-                                  <TableCell>{assignment.location}</TableCell>
-                                  <TableCell>{assignment.guard}</TableCell>
-                                  <TableCell>{assignment.shift}</TableCell>
-                                  <TableCell>
-                                    <Badge
-                                      className={
-                                        assignment.status === "On Duty"
-                                          ? "bg-green-100 text-green-700"
-                                          : "bg-gray-100 text-gray-700"
-                                      }
-                                    >
-                                      {assignment.status}
-                                    </Badge>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-
                         <div className="mt-4">
                           <h4 className="font-medium mb-2">Available Guards</h4>
                           <div className="space-y-2">
-                            {usersData
-                              .filter((user) => user.userType === "guard")
-                              .map((guard) => (
-                                <div key={guard.id} className="flex items-center justify-between p-3 border rounded-md">
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarFallback>
-                                        {guard.firstName.charAt(0)}
-                                        {guard.lastName.charAt(0)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <span className="font-medium">
-                                        {guard.firstName} {guard.lastName}
-                                      </span>
-                                      <span className="text-xs block text-muted-foreground">{guard.email}</span>
-                                    </div>
+                            {guardsData.map((guard) => (
+                              <div key={guard.u_id} className="flex items-center justify-between p-3 border rounded-md">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback>
+                                      {guard.u_fn?.charAt(0) || ""}
+                                      {guard.u_ln?.charAt(0) || ""}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <span className="font-medium">
+                                      {guard.u_fn} {guard.u_ln}
+                                    </span>
+                                    <span className="text-xs block text-muted-foreground">{guard.u_email}</span>
                                   </div>
-                                  <Badge variant="outline">Guard</Badge>
                                 </div>
-                              ))}
+                                <Badge variant="outline">Guard</Badge>
+                              </div>
+                            ))}
+                            {guardsData.length === 0 && (
+                              <div className="text-center py-4 text-muted-foreground">No guards available</div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2116,7 +2125,7 @@ function AdminDashboard() {
                                   setNewUser({
                                     ...newUser,
                                     userType: value,
-                                    ...(value === "guard" ? { blockId: "", householdId: "" } : {}),
+                                    ...(value === "guard" ? { blockId: "", householdId: "", shift: "" } : {}),
                                   })
                                 }}
                               >
@@ -2204,7 +2213,7 @@ function AdminDashboard() {
 
                                 // Submit directly to the API
                                 try {
-                                  const response = await axios.post("http://localhost:3001/post/addUser", userData)
+                                  const response = await axios.post("http://localhost:3004/post/addUser", userData)
 
                                   if (response.status === 201) {
                                     // Add to UI state
@@ -2245,6 +2254,7 @@ function AdminDashboard() {
                                       userType: "customer",
                                     })
                                     setIsAddUserOpen(false)
+                                    fetchGuards()
                                     toast.success("User added successfully to database")
                                   }
                                 } catch (err) {
@@ -2621,12 +2631,10 @@ const NotifyHouseholdDialog = ({ onSendNotification }: { onSendNotification: (no
       priority,
     })
 
-    // Reset form
     setSubject("")
     setMessage("")
     setPriority("normal")
 
-    // Close the dialog
     document
       .querySelector('[role="dialog"]')
       ?.closest('div[data-state="open"]')

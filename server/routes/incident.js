@@ -4,12 +4,12 @@ import { connectToDatabase } from "../lib/db.js"
 const router = express.Router()
 
 router.post("/incident", async (req, res) => {
-  const { date, type, description, status } = req.body
+  const { block, hid, type, description } = req.body
   try {
     const db = await connectToDatabase()
     await db.query(
-      "INSERT INTO incident_tb (date, type, description, status) VALUES (?,?, ?, ?)",
-      [date, type, description, status],
+      "INSERT INTO incident (i_block, i_hid, i_type , i_description) VALUES (?, ?, ?, ?)",
+      [block, hid, type, description],
     )
     return res.status(201).json({ message: "incident created successfully" })
   } catch (err) {

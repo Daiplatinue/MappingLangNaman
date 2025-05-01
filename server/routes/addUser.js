@@ -4,7 +4,7 @@ import { connectToDatabase } from "../lib/db.js"
 const router = express.Router()
 
 router.post("/addUser", async (req, res) => {
-  const { firstname, lastname, middlename, email, refs, type, block, hid } = req.body
+  const { firstname, lastname, middlename, email, refs, type, block, hid , status} = req.body
 
   console.log("Received user data:", req.body)
 
@@ -22,8 +22,8 @@ router.post("/addUser", async (req, res) => {
     }
 
     const [result] = await db.query(
-      "INSERT INTO users (u_fn, u_ln, u_mi, u_email, u_refs, u_type, u_block, u_hid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [firstname, lastname, middlename, email, refs, type, block, hid],
+      "INSERT INTO users (u_fn, u_ln, u_mi, u_email, u_refs, u_type, u_block, u_hid, u_status) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, 'New')",
+      [firstname, lastname, middlename, email, refs, type, block, hid, status],
     )
 
     console.log("Database insert result:", result)

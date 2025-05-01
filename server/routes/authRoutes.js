@@ -1,50 +1,28 @@
 import express from "express"
 import { connectToDatabase } from "../lib/db.js"
-import bcrypt from "bcrypt"
 
 const router = express.Router()
 
-router.post("/register", async (req, res) => {
-  const { firstname, lastname, email, password } = req.body
-  try {
-    const db = await connectToDatabase()
-    const [rows] = await db.query("SELECT * FROM accounts WHERE u_email = ?", [email])
-    if (rows.length > 0) {
-      return res.status(409).json({ message: "Email already exists" })
-    }
-    const hashPassword = await bcrypt.hash(password, 10)
-
-    await db.query(
-      "INSERT INTO accounts (u_fn, u_ln, u_email, u_password, u_type, u_status) VALUES (?, ?, ?, ?, 'customer', 'pending')",
-      [firstname, lastname, email, hashPassword],
-    )
-
-    return res.status(201).json({ message: "user created successfully" })
-  } catch (err) {
-    console.error(err)
-    return res.status(500).json({ message: "Server error", error: err.message })
-  }
-})
-
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body
+  const { refs } = req.body
   try {
     const db = await connectToDatabase()
-    const [rows] = await db.query("SELECT * FROM accounts WHERE u_email = ?", [email])
+    const [rows] = await db.query("SELECT * FROM users WHERE u_refs = ?", [refs])
+
     if (rows.length === 0) {
       return res.status(404).json({ message: "User not found" })
-    }
-    const isMatch = await bcrypt.compare(password, rows[0].u_password)
-    if (!isMatch) {
-      return res.status(401).json({ message: "Wrong password" })
     }
 
     const user = {
       id: rows[0].u_id,
       firstname: rows[0].u_fn,
       lastname: rows[0].u_ln,
+      middlename: rows[0].u_mi,
       email: rows[0].u_email,
+      refs: rows[0].u_refs,
       type: rows[0].u_type,
+      block: rows[0].u_block,
+      hid: rows[0].u_hid,
       status: rows[0].u_status,
     }
 
@@ -69,7 +47,7 @@ const checkAuth = (req, res, next) => {
 router.get("/home", checkAuth, async (req, res) => {
   try {
     const db = await connectToDatabase()
-    const [rows] = await db.query("SELECT * FROM accounts WHERE u_id = ?", [req.session.userId])
+    const [rows] = await db.query("SELECT * FROM users WHERE u_id = ?", [req.session.userId])
     if (rows.length === 0) {
       return res.status(404).json({ message: "User not found" })
     }

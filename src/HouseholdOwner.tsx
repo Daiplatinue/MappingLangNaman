@@ -1,18 +1,9 @@
+"use client"
+
 import type React from "react"
 
 import { useState } from "react"
-import {
-  Home,
-  Droplet,
-  Zap,
-  Users,
-  AlertTriangle,
-  FileText,
-  Bell,
-  Send,
-  BarChart3,
-  Phone,
-} from "lucide-react"
+import { Home, Droplet, Zap, Users, AlertTriangle, FileText, Bell, Send, BarChart3, Phone } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,15 +43,15 @@ const householdData = {
   },
   waterPayment: {
     current: 1800,
-    rate: 10, 
-    threshold: 150, 
-    exceededRate: 15, 
+    rate: 10,
+    threshold: 150,
+    exceededRate: 15,
   },
   electricityPayment: {
     current: 2640,
-    rate: 12, 
-    threshold: 200, 
-    exceededRate: 18, 
+    rate: 12,
+    threshold: 200,
+    exceededRate: 18,
   },
   paymentLogs: [
     {
@@ -374,7 +365,7 @@ function HouseholdOwner() {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-primary/10">
-              House ID: {householdData.id}
+              House ID: {JSON.parse(localStorage.getItem("users") || '{"hid":""}').hid}
             </Badge>
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
