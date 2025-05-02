@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import {
   Bell,
@@ -75,6 +77,30 @@ import {
 } from "./AdminTabs/blocks-data"
 
 import axios from "axios"
+
+// Add this helper function to format dates
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return "N/A"
+
+  try {
+    // Handle MySQL date format (YYYY-MM-DD)
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      // If it's not a valid date, return the original string
+      return dateString
+    }
+
+    // Format the date
+    const month = date.toLocaleString("en-US", { month: "short" })
+    const day = date.getDate()
+    const year = date.getFullYear()
+
+    return `${month} ${day}, ${year}`
+  } catch (error) {
+    console.error("Error formatting date:", error)
+    return dateString
+  }
+}
 
 const StatCard = ({ icon, title, value, description, color }: any) => {
   return (
@@ -288,6 +314,10 @@ function AdminDashboard() {
     startDate: "",
     endDate: "",
   })
+
+  // Add these state variables after the other state declarations (around line 200)
+  const [apiConstructionData, setApiConstructionData] = useState<any[]>([])
+  const [isLoadingConstruction, setIsLoadingConstruction] = useState(false)
 
   const totalBlocks = blocksData.length
   const totalHouseholds = blocksData.reduce((sum, block) => sum + block.totalHouseholds, 0)
@@ -786,6 +816,29 @@ function AdminDashboard() {
     }
   }
 
+  // Add this function after the other fetch functions (around line 600)
+  const fetchConstruction = async () => {
+    try {
+      setIsLoadingConstruction(true)
+      const response = await axios.get("http://localhost:3004/get/fetchConstruction")
+
+      if (response.data && response.data.success) {
+        console.log("Fetched construction data:", response.data.constructions)
+        setApiConstructionData(response.data.constructions)
+      } else {
+        console.error("Failed to fetch construction data:", response.data)
+        toast.error("Failed to fetch construction data")
+        setApiConstructionData([])
+      }
+    } catch (error) {
+      console.error("Error fetching construction data:", error)
+      toast.error("Failed to fetch construction data")
+      setApiConstructionData([])
+    } finally {
+      setIsLoadingConstruction(false)
+    }
+  }
+
   const handleUpdateIncidentStatus = async (incidentId: number) => {
     try {
       setIsUpdatingIncidentStatus(incidentId)
@@ -793,12 +846,8 @@ function AdminDashboard() {
 
       if (response.data && response.data.success) {
         // Update the local state
-        setApiIncidentsData(prevData => 
-          prevData.map(incident => 
-            incident.i_id === incidentId 
-              ? { ...incident, i_status: 'Resolved' } 
-              : incident
-          )
+        setApiIncidentsData((prevData) =>
+          prevData.map((incident) => (incident.i_id === incidentId ? { ...incident, i_status: "Resolved" } : incident)),
         )
         toast.success("Incident marked as resolved")
       } else {
@@ -814,19 +863,19 @@ function AdminDashboard() {
 
   const formatIncidentDate = (dateString: string) => {
     if (!dateString) return "N/A"
-    
+
     try {
       const date = new Date(dateString)
-      if (isNaN(date.getTime())) return dateString 
-      
-      const month = date.toLocaleString('en-US', { month: 'short' })
+      if (isNaN(date.getTime())) return dateString
+
+      const month = date.toLocaleString("en-US", { month: "short" })
       const day = date.getDate()
       const year = date.getFullYear()
-      
+
       return `${month}, ${day}, ${year}`
     } catch (error) {
       console.error("Error formatting date:", error)
-      return dateString 
+      return dateString
     }
   }
 
@@ -842,6 +891,14 @@ function AdminDashboard() {
     if (activeTab === "incidents") {
       console.log("Fetching incidents...")
       fetchIncidents()
+    }
+  }, [activeTab])
+
+  // Add this useEffect to fetch construction data when the tab is active (around line 650)
+  useEffect(() => {
+    if (activeTab === "construction") {
+      console.log("Fetching construction data...")
+      fetchConstruction()
     }
   }, [activeTab])
 
@@ -1717,9 +1774,7 @@ function AdminDashboard() {
                             apiIncidentsData.map((incident, index) => (
                               <TableRow key={incident.i_id || index}>
                                 <TableCell>{formatIncidentDate(incident.i_date)}</TableCell>
-                                <TableCell>
-                                  {incident.i_hid}
-                                </TableCell>
+                                <TableCell>{incident.i_hid}</TableCell>
                                 <TableCell>
                                   <Badge variant="outline">{incident.i_type || "Other"}</Badge>
                                 </TableCell>
@@ -1737,9 +1792,9 @@ function AdminDashboard() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {incident.i_status !== "Resolved" ? (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
                                       className="gap-1"
                                       onClick={() => handleUpdateIncidentStatus(incident.i_id)}
                                       disabled={isUpdatingIncidentStatus === incident.i_id}
@@ -1786,8 +1841,6 @@ function AdminDashboard() {
                           <SelectItem value="under-construction">Under Construction</SelectItem>
                         </SelectContent>
                       </Select>
-                      {/* Replace the construction form dialog content with this updated version that uses state
-                      // Find the construction form in the "Construction Tab" section (around line 1800) */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="gap-2">
@@ -1940,7 +1993,6 @@ function AdminDashboard() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Household ID</TableHead>
-                            <TableHead>Address</TableHead>
                             <TableHead>Block</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Start Date</TableHead>
@@ -1948,38 +2000,53 @@ function AdminDashboard() {
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
+                        {/* Replace the TableBody in the Construction tab with this updated version (around line 2000) */}
                         <TableBody>
-                          {householdsData
-                            .filter((h) =>
-                              ["Under Renovation", "Upcoming Renovation", "Under Construction"].includes(h.status),
-                            )
-                            .map((household) => (
-                              <TableRow key={household.id}>
-                                <TableCell>{household.id}</TableCell>
-                                <TableCell>{household.address}</TableCell>
-                                <TableCell>Block {household.blockId}</TableCell>
+                          {isLoadingConstruction ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8">
+                                <div className="flex justify-center items-center">
+                                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                  <span className="ml-2">Loading construction data...</span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : apiConstructionData.length > 0 ? (
+                            apiConstructionData.map((construction) => (
+                              <TableRow key={construction.c_id}>
+                                <TableCell>{construction.c_hid}</TableCell>
+                                <TableCell>{construction.c_block}</TableCell>
                                 <TableCell>
                                   <Badge
                                     className={
-                                      household.status === "Under Renovation"
+                                      construction.c_status === "Under Renovation"
                                         ? "bg-orange-100 text-orange-700"
-                                        : household.status === "Upcoming Renovation"
+                                        : construction.c_status === "Upcoming Renovation"
                                           ? "bg-yellow-100 text-yellow-700"
-                                          : "bg-purple-100 text-purple-700"
+                                          : construction.c_status === "Under Construction"
+                                            ? "bg-purple-100 text-purple-700"
+                                            : "bg-green-100 text-green-700"
                                     }
                                   >
-                                    {household.status}
+                                    {construction.c_status || "Not specified"}
                                   </Badge>
                                 </TableCell>
-                                <TableCell>2023-04-15</TableCell>
-                                <TableCell>2023-06-30</TableCell>
+                                <TableCell>{formatDate(construction.c_startDate)}</TableCell>
+                                <TableCell>{formatDate(construction.c_endDate)}</TableCell>
                                 <TableCell className="text-right">
                                   <Button variant="ghost" size="sm">
                                     View
                                   </Button>
                                 </TableCell>
                               </TableRow>
-                            ))}
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8">
+                                No construction records found. Add a new construction to get started.
+                              </TableCell>
+                            </TableRow>
+                          )}
                         </TableBody>
                       </Table>
                     </CardContent>

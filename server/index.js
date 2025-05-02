@@ -9,6 +9,7 @@ import getUsersRouter from "./routes/getUsers.js"
 import updateUserHouseholdRouter from "./routes/updateUserHousehold.js"
 import getIncidentRouter from "./routes/getIncident.js"
 import updateIncidentStatusRouter from "./routes/updateIncidentStatus.js"
+import getConstructionRouter from "./routes/getConstruction.js"
 
 const app = express()
 app.use(
@@ -28,6 +29,7 @@ app.use("/get", getUsersRouter)
 app.use("/post", updateUserHouseholdRouter)
 app.use("/get", getIncidentRouter)
 app.use("/post", updateIncidentStatusRouter)
+app.use("/get", getConstructionRouter)
 
 app.get("/", (req, res) => {
   console.log("req.body")
