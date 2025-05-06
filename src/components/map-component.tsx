@@ -1,50 +1,41 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { MapContainer, TileLayer, Popup, useMap, Marker, useMapEvents, Circle, Polygon } from "react-leaflet"
-import type L from "leaflet"
+import { MapContainer, TileLayer, useMap, useMapEvents, Circle, Polygon } from "react-leaflet"
+import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import {
-  Building2,
-  Users,
-  Home,
-  Calendar,
-  Droplet,
-  Zap,
-  ChevronLeft,
-  Info,
-  LayoutGrid,
-  MapPin,
-  Pencil,
-  Trash2,
-  Plus,
-  Save,
-  Move,
-  Square,
-  CircleIcon,
-} from "lucide-react"
+import { Building2, Users, Home, Calendar, Info, LayoutGrid, ChevronLeft } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner"
 
 const CENTER_POSITION: [number, number] = [10.249231, 123.78923]
 const INITIAL_ZOOM = 18
 
+// Define the allowed status and incident types as string literals
+type StatusType =
+  | "Occupied"
+  | "Under Renovation"
+  | "Upcoming Renovation"
+  | "Under Construction"
+  | "Upcoming Construction"
+type IncidentType = "Maintenance" | "Noise" | "Construction" | "Other"
+
 interface HouseProperties {
   id: string
-  address: string
   occupants: number
-  yearBuilt: number
-  waterConsumption: number
-  electricityConsumption: number
+  status: {
+    type: StatusType
+    date: string
+  }
+  incidents: {
+    type: IncidentType
+    description: string
+    date: string
+  }[]
 }
 
 interface PinProperties {
@@ -58,97 +49,7 @@ interface PinProperties {
   houses: HouseProperties[]
 }
 
-interface Pin {
-  position: [number, number]
-  properties: PinProperties
-}
-
-const pinsData: Pin[] = [
-  {
-    position: [10.249559, 123.787449],
-    properties: {
-      id: "Pin1",
-      name: "Sugbo GK Village Block A",
-      blockNumber: "A",
-      numberOfHouseholds: 20,
-      totalResidents: 80,
-      yearEstablished: 2010,
-      type: "Residential",
-      houses: [
-        {
-          id: "A1",
-          address: "A1 Sugbo St",
-          occupants: 4,
-          yearBuilt: 2010,
-          waterConsumption: 150,
-          electricityConsumption: 200,
-        },
-        {
-          id: "A2",
-          address: "A2 Sugbo St",
-          occupants: 3,
-          yearBuilt: 2010,
-          waterConsumption: 120,
-          electricityConsumption: 180,
-        },
-      ],
-    },
-  },
-  {
-    position: [10.24959, 123.78768],
-    properties: {
-      id: "Pin2",
-      name: "Sugbo GK Village Block B",
-      blockNumber: "B",
-      numberOfHouseholds: 18,
-      totalResidents: 72,
-      yearEstablished: 2011,
-      type: "Residential",
-      houses: [
-        {
-          id: "B1",
-          address: "B1 Sugbo St",
-          occupants: 5,
-          yearBuilt: 2011,
-          waterConsumption: 180,
-          electricityConsumption: 220,
-        },
-        {
-          id: "B2",
-          address: "B2 Sugbo St",
-          occupants: 4,
-          yearBuilt: 2011,
-          waterConsumption: 140,
-          electricityConsumption: 190,
-        },
-      ],
-    },
-  },
-  {
-    position: [10.248255, 123.790373],
-    properties: {
-      id: "Pin3",
-      name: "Sugbo GK Village Block C",
-      blockNumber: "C",
-      numberOfHouseholds: 15,
-      totalResidents: 60,
-      yearEstablished: 2012,
-      type: "Residential",
-      houses: [
-        {
-          id: "C1",
-          address: "C1 Sugbo St",
-          occupants: 4,
-          yearBuilt: 2012,
-          waterConsumption: 145,
-          electricityConsumption: 195,
-        },
-      ],
-    },
-  },
-]
-
-// Sample polygon data
+// Update the polygonData array to include more detailed properties and colors
 const polygonData = [
   {
     id: "zone1",
@@ -160,6 +61,48 @@ const polygonData = [
     ],
     name: "Zone A1",
     type: "Residential Zone",
+    color: "#8B5CF6", // purple
+    properties: {
+      id: "Zone1",
+      name: "Zone A1",
+      blockNumber: "A1",
+      numberOfHouseholds: 25,
+      totalResidents: 95,
+      yearEstablished: 2010,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "A1-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Jan 2022",
+          },
+          incidents: [
+            {
+              type: "Maintenance",
+              description: "Water leak in bathroom requiring plumbing repair",
+              date: "Mar 15, 2023",
+            },
+          ],
+        },
+        {
+          id: "A1-2",
+          occupants: 3,
+          status: {
+            type: "Under Renovation",
+            date: "Started Apr 2023",
+          },
+          incidents: [
+            {
+              type: "Noise",
+              description: "Complaint from neighbors about construction noise",
+              date: "Apr 20, 2023",
+            },
+          ],
+        },
+      ],
+    },
   },
   {
     id: "zone2",
@@ -171,6 +114,42 @@ const polygonData = [
     ],
     name: "Zone A2",
     type: "Residential Zone",
+    color: "#8B5CF6", // purple
+    properties: {
+      id: "Zone2",
+      name: "Zone A2",
+      blockNumber: "A2",
+      numberOfHouseholds: 22,
+      totalResidents: 88,
+      yearEstablished: 2010,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "A2-1",
+          occupants: 5,
+          status: {
+            type: "Occupied",
+            date: "Since Feb 2022",
+          },
+          incidents: [
+            {
+              type: "Other",
+              description: "Minor fire incident in the kitchen",
+              date: "Jun 10, 2023",
+            },
+          ],
+        },
+        {
+          id: "A2-2",
+          occupants: 4,
+          status: {
+            type: "Upcoming Construction",
+            date: "Starting Jul 2023",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
 
   // Upper middle zones
@@ -179,11 +158,41 @@ const polygonData = [
     positions: [
       [10.249939, 123.788275],
       [10.250139, 123.788962],
-      [10.250261, 123.788940],
+      [10.250261, 123.78894],
       [10.250049, 123.788227],
     ],
     name: "Zone B1",
     type: "Residential Zone",
+    color: "#EC4899", // pink
+    properties: {
+      id: "Zone3",
+      name: "Zone B1",
+      blockNumber: "B1",
+      numberOfHouseholds: 18,
+      totalResidents: 72,
+      yearEstablished: 2011,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "B1-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Mar 2022",
+          },
+          incidents: [],
+        },
+        {
+          id: "B1-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Apr 2022",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
   {
     id: "zone4",
@@ -195,17 +204,77 @@ const polygonData = [
     ],
     name: "Zone B2",
     type: "Residential Zone",
+    color: "#EC4899", // pink
+    properties: {
+      id: "Zone4",
+      name: "Zone B2",
+      blockNumber: "B2",
+      numberOfHouseholds: 20,
+      totalResidents: 80,
+      yearEstablished: 2011,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "B2-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since May 2022",
+          },
+          incidents: [],
+        },
+        {
+          id: "B2-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Jun 2022",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
   {
     id: "zone5",
     positions: [
       [10.249917, 123.788624],
       [10.249965, 123.788758],
-      [10.249522, 123.789160],
+      [10.249522, 123.78916],
       [10.249379, 123.789123],
     ],
     name: "Zone B3",
     type: "Residential Zone",
+    color: "#EC4899", // pink
+    properties: {
+      id: "Zone5",
+      name: "Zone B3",
+      blockNumber: "B3",
+      numberOfHouseholds: 15,
+      totalResidents: 60,
+      yearEstablished: 2011,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "B3-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Jul 2022",
+          },
+          incidents: [],
+        },
+        {
+          id: "B3-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Aug 2022",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
 
   // Middle zones
@@ -219,6 +288,36 @@ const polygonData = [
     ],
     name: "Zone C1",
     type: "Residential Zone",
+    color: "#10B981", // green
+    properties: {
+      id: "Zone6",
+      name: "Zone C1",
+      blockNumber: "C1",
+      numberOfHouseholds: 16,
+      totalResidents: 64,
+      yearEstablished: 2012,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "C1-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Sep 2022",
+          },
+          incidents: [],
+        },
+        {
+          id: "C1-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Oct 2022",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
   {
     id: "zone7",
@@ -226,13 +325,43 @@ const polygonData = [
       [10.248434, 123.789332],
       [10.248434, 123.789209],
       [10.248867, 123.789187],
-      [10.249236, 123.789230],
+      [10.249236, 123.78923],
       [10.249664, 123.789402],
       [10.249595, 123.789514],
-      [10.249094, 123.789321]
+      [10.249094, 123.789321],
     ],
     name: "Zone C2",
     type: "Residential Zone",
+    color: "#10B981", // green
+    properties: {
+      id: "Zone7",
+      name: "Zone C2",
+      blockNumber: "C2",
+      numberOfHouseholds: 17,
+      totalResidents: 68,
+      yearEstablished: 2012,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "C2-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Nov 2022",
+          },
+          incidents: [],
+        },
+        {
+          id: "C2-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Dec 2022",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
 
   // Lower zones (Saint Mary area)
@@ -240,14 +369,44 @@ const polygonData = [
     id: "zone8",
     positions: [
       [10.249532, 123.789659],
-      [10.249506, 123.789750],
+      [10.249506, 123.78975],
       [10.248983, 123.789584],
       [10.248455, 123.789605],
       [10.248424, 123.789466],
-      [10.248951, 123.789450],
+      [10.248951, 123.78945],
     ],
     name: "Zone D1",
     type: "Residential Zone",
+    color: "#F59E0B", // amber
+    properties: {
+      id: "Zone8",
+      name: "Zone D1",
+      blockNumber: "D1",
+      numberOfHouseholds: 14,
+      totalResidents: 56,
+      yearEstablished: 2013,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "D1-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Jan 2023",
+          },
+          incidents: [],
+        },
+        {
+          id: "D1-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Feb 2023",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
   {
     id: "zone9",
@@ -259,6 +418,36 @@ const polygonData = [
     ],
     name: "Zone D2",
     type: "Residential Zone",
+    color: "#F59E0B", // amber
+    properties: {
+      id: "Zone9",
+      name: "Zone D2",
+      blockNumber: "D2",
+      numberOfHouseholds: 12,
+      totalResidents: 48,
+      yearEstablished: 2013,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "D2-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Mar 2023",
+          },
+          incidents: [],
+        },
+        {
+          id: "D2-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Apr 2023",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
   {
     id: "zone10",
@@ -268,30 +457,120 @@ const polygonData = [
       [10.248487, 123.788822],
       [10.248397, 123.788822],
     ],
-    name: "Zone D2",
+    name: "Zone D3",
     type: "Residential Zone",
+    color: "#F59E0B", // amber
+    properties: {
+      id: "Zone10",
+      name: "Zone D3",
+      blockNumber: "D3",
+      numberOfHouseholds: 10,
+      totalResidents: 40,
+      yearEstablished: 2013,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "D3-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since May 2023",
+          },
+          incidents: [],
+        },
+        {
+          id: "D3-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Jun 2023",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
   {
     id: "zone11",
     positions: [
       [10.248197, 123.789783],
-      [10.248170, 123.788822],
-      [10.248270, 123.788801],
+      [10.24817, 123.788822],
+      [10.24827, 123.788801],
       [10.248302, 123.789783],
     ],
-    name: "Zone D2",
+    name: "Zone D4",
     type: "Residential Zone",
+    color: "#F59E0B", // amber
+    properties: {
+      id: "Zone11",
+      name: "Zone D4",
+      blockNumber: "D4",
+      numberOfHouseholds: 11,
+      totalResidents: 44,
+      yearEstablished: 2013,
+      type: "Residential Zone",
+      houses: [
+        {
+          id: "D4-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Jul 2023",
+          },
+          incidents: [],
+        },
+        {
+          id: "D4-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Aug 2023",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
   {
     id: "zone12",
     positions: [
-      [10.248603, 123.790990],
-      [10.248350, 123.789917],
+      [10.248603, 123.79099],
+      [10.24835, 123.789917],
       [10.248434, 123.789933],
       [10.248719, 123.790957],
     ],
-    name: "Zone D2",
-    type: "Residential Zone",
+    name: "Zone D5",
+    type: "Commercial Zone",
+    color: "#EF4444", // red
+    properties: {
+      id: "Zone12",
+      name: "Zone D5",
+      blockNumber: "D5",
+      numberOfHouseholds: 13,
+      totalResidents: 52,
+      yearEstablished: 2013,
+      type: "Commercial Zone",
+      houses: [
+        {
+          id: "D5-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Sep 2023",
+          },
+          incidents: [],
+        },
+        {
+          id: "D5-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Oct 2023",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
   {
     id: "zone13",
@@ -301,12 +580,40 @@ const polygonData = [
       [10.248424, 123.790823],
       [10.248197, 123.789943],
     ],
-    name: "Zone D2",
-    type: "Residential Zone",
+    name: "Zone D6",
+    type: "Community Zone",
+    color: "#3B82F6", // blue
+    properties: {
+      id: "Zone13",
+      name: "Zone D6",
+      blockNumber: "D6",
+      numberOfHouseholds: 9,
+      totalResidents: 36,
+      yearEstablished: 2013,
+      type: "Community Zone",
+      houses: [
+        {
+          id: "D6-1",
+          occupants: 4,
+          status: {
+            type: "Occupied",
+            date: "Since Nov 2023",
+          },
+          incidents: [],
+        },
+        {
+          id: "D6-2",
+          occupants: 3,
+          status: {
+            type: "Occupied",
+            date: "Since Dec 2023",
+          },
+          incidents: [],
+        },
+      ],
+    },
   },
 ]
-
-type EditorMode = "view" | "add" | "edit" | "delete" | "draw-polygon" | "draw-circle"
 
 const MapInitializer = () => {
   const map = useMap()
@@ -336,119 +643,45 @@ const CoordinatesDisplay = () => {
   )
 }
 
-// Draggable marker for editing mode
-const DraggableMarker = ({
-  position,
-  onDragEnd,
-  color = "blue",
-}: {
-  position: [number, number]
-  onDragEnd: (pos: [number, number]) => void
-  color?: string
-}) => {
-  const markerRef = useRef<L.Marker>(null)
-
-  const eventHandlers = {
-    dragend() {
-      const marker = markerRef.current
-      if (marker != null) {
-        const newPos = marker.getLatLng()
-        onDragEnd([newPos.lat, newPos.lng])
-      }
-    },
+// Helper function to get badge variant based on status
+const getStatusVariant = (status: StatusType): "default" | "secondary" | "destructive" | "outline" => {
+  switch (status) {
+    case "Occupied":
+      return "default"
+    case "Under Renovation":
+    case "Under Construction":
+      return "destructive"
+    case "Upcoming Renovation":
+    case "Upcoming Construction":
+      return "secondary"
+    default:
+      return "outline"
   }
-
-  return (
-    <Marker draggable={true} eventHandlers={eventHandlers} position={position} ref={markerRef}>
-      <Popup>
-        <div className="p-2">
-          <p className="text-sm">Drag me to adjust position</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Lat: {position[0].toFixed(6)}, Lng: {position[1].toFixed(6)}
-          </p>
-        </div>
-      </Popup>
-    </Marker>
-  )
 }
 
-// Custom marker component with animation
-const AnimatedMarker = ({
-  position,
-  properties,
-  onClick,
-  editable = false,
-  onEdit,
-  onDelete,
-}: {
-  position: [number, number]
-  properties: PinProperties
-  onClick: () => void
-  editable?: boolean
-  onEdit?: () => void
-  onDelete?: () => void
-}) => {
-  const [isHovered, setIsHovered] = useState(false)
-
-  return (
-    <Marker
-      position={position}
-      eventHandlers={{
-        mouseover: () => setIsHovered(true),
-        mouseout: () => setIsHovered(false),
-      }}
-      opacity={isHovered ? 1 : 0.8}
-    >
-      <Popup>
-        <div className="p-2">
-          <h3 className="font-bold text-primary">{properties.name}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline" className="bg-primary/10">
-              Block {properties.blockNumber}
-            </Badge>
-            <Badge variant="outline" className="bg-primary/10">
-              {properties.type}
-            </Badge>
-          </div>
-          <p className="mt-2 text-sm">
-            <span className="font-medium">Households:</span> {properties.numberOfHouseholds}
-          </p>
-          <div className="flex gap-2 mt-2">
-            <Button size="sm" variant="outline" className="flex-1" onClick={() => onClick()}>
-              View
-            </Button>
-            {editable && (
-              <>
-                <Button size="sm" variant="outline" className="flex-1" onClick={onEdit}>
-                  <Pencil className="h-3 w-3 mr-1" />
-                  Edit
-                </Button>
-                <Button size="sm" variant="destructive" className="flex-1" onClick={onDelete}>
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Delete
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </Popup>
-    </Marker>
-  )
+// Helper function to get status icon
+const getStatusIcon = (status: StatusType): React.ReactNode => {
+  switch (status) {
+    case "Occupied":
+      return <Home className="h-4 w-4 text-primary" />
+    case "Under Renovation":
+    case "Under Construction":
+      return <Building2 className="h-4 w-4 text-destructive" />
+    case "Upcoming Renovation":
+    case "Upcoming Construction":
+      return <Calendar className="h-4 w-4 text-secondary" />
+    default:
+      return <Info className="h-4 w-4 text-muted-foreground" />
+  }
 }
 
 // House card component with animation
 const HouseCard = ({
   house,
   onClick,
-  onEdit,
-  onDelete,
-  editable = false,
 }: {
   house: HouseProperties
   onClick: () => void
-  onEdit?: () => void
-  onDelete?: () => void
-  editable?: boolean
 }) => {
   return (
     <motion.div
@@ -460,56 +693,30 @@ const HouseCard = ({
     >
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="font-medium text-primary">{house.address}</h3>
-          <p className="text-sm text-muted-foreground">ID: {house.id}</p>
+          <h3 className="font-medium text-primary">House ID: {house.id}</h3>
         </div>
-        <Badge variant={house.occupants > 3 ? "default" : "outline"}>
+        <Badge variant="default" className="bg-black text-white hover:bg-black">
           {house.occupants} {house.occupants === 1 ? "Occupant" : "Occupants"}
         </Badge>
       </div>
-      <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-        <div className="flex items-center gap-1">
-          <Calendar className="h-3 w-3 text-muted-foreground" />
-          <span>{house.yearBuilt}</span>
+      <div className="mt-3 text-sm">
+        <div className="flex items-center gap-1 mb-2">
+          <Badge variant={getStatusVariant(house.status.type)}>{house.status.type}</Badge>
+          <span className="text-xs text-muted-foreground ml-2">{house.status.date}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Droplet className="h-3 w-3 text-blue-500" />
-          <span>{house.waterConsumption} m³</span>
-        </div>
-        <div className="flex items-center gap-1 col-span-2">
-          <Zap className="h-3 w-3 text-yellow-500" />
-          <span>{house.electricityConsumption} kWh</span>
-        </div>
+        {house.incidents.length > 0 && (
+          <div className="mt-2">
+            <p className="text-xs font-medium mb-1">Recent Incident:</p>
+            <div className="bg-muted/50 p-2 rounded-md">
+              <div className="flex justify-between">
+                <Badge variant="outline">{house.incidents[0].type}</Badge>
+                <span className="text-xs text-muted-foreground">{house.incidents[0].date}</span>
+              </div>
+              <p className="text-xs mt-1">{house.incidents[0].description}</p>
+            </div>
+          </div>
+        )}
       </div>
-
-      {editable && (
-        <div className="flex gap-2 mt-3">
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (onEdit) onEdit()
-            }}
-          >
-            <Pencil className="h-3 w-3 mr-1" />
-            Edit
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            className="flex-1"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (onDelete) onDelete()
-            }}
-          >
-            <Trash2 className="h-3 w-3 mr-1" />
-            Delete
-          </Button>
-        </div>
-      )}
     </motion.div>
   )
 }
@@ -534,214 +741,9 @@ const StatCard = ({ icon, label, value }: { icon: React.ReactNode; label: string
   )
 }
 
-// Form for adding/editing pins
-const PinForm = ({
-  pin,
-  onSubmit,
-  onCancel,
-}: {
-  pin?: { position: [number, number]; properties: PinProperties }
-  onSubmit: (data: { position: [number, number]; properties: PinProperties }) => void
-  onCancel: () => void
-}) => {
-  const [formData, setFormData] = useState<{
-    position: [number, number]
-    properties: PinProperties
-  }>(
-    pin || {
-      position: [0, 0],
-      properties: {
-        id: `Pin${Date.now()}`,
-        name: "",
-        blockNumber: "",
-        numberOfHouseholds: 0,
-        totalResidents: 0,
-        yearEstablished: new Date().getFullYear(),
-        type: "Residential",
-        houses: [],
-      },
-    },
-  )
-
-  const handleChange = (field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      properties: {
-        ...prev.properties,
-        [field]: value,
-      },
-    }))
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" value={formData.properties.name} onChange={(e) => handleChange("name", e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="blockNumber">Block Number</Label>
-          <Input
-            id="blockNumber"
-            value={formData.properties.blockNumber}
-            onChange={(e) => handleChange("blockNumber", e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="numberOfHouseholds">Households</Label>
-          <Input
-            id="numberOfHouseholds"
-            type="number"
-            value={formData.properties.numberOfHouseholds}
-            onChange={(e) => handleChange("numberOfHouseholds", Number.parseInt(e.target.value) || 0)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="totalResidents">Residents</Label>
-          <Input
-            id="totalResidents"
-            type="number"
-            value={formData.properties.totalResidents}
-            onChange={(e) => handleChange("totalResidents", Number.parseInt(e.target.value) || 0)}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="yearEstablished">Year Established</Label>
-          <Input
-            id="yearEstablished"
-            type="number"
-            value={formData.properties.yearEstablished}
-            onChange={(e) => handleChange("yearEstablished", Number.parseInt(e.target.value) || 0)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="type">Type</Label>
-          <Select value={formData.properties.type} onValueChange={(value) => handleChange("type", value)}>
-            <SelectTrigger id="type">
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Residential">Residential</SelectItem>
-              <SelectItem value="Commercial">Commercial</SelectItem>
-              <SelectItem value="Community">Community</SelectItem>
-              <SelectItem value="Infrastructure">Infrastructure</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="pt-4 flex gap-2">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
-        </Button>
-        <Button onClick={() => onSubmit(formData)} className="flex-1">
-          {pin ? "Update" : "Add"} Pin
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-// Form for adding/editing houses
-const HouseForm = ({
-  house,
-  onSubmit,
-  onCancel,
-}: {
-  house?: HouseProperties
-  onSubmit: (data: HouseProperties) => void
-  onCancel: () => void
-}) => {
-  const [formData, setFormData] = useState<HouseProperties>(
-    house || {
-      id: `House${Date.now()}`,
-      address: "",
-      occupants: 0,
-      yearBuilt: new Date().getFullYear(),
-      waterConsumption: 0,
-      electricityConsumption: 0,
-    },
-  )
-
-  const handleChange = (field: keyof HouseProperties, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="address">Address</Label>
-          <Input id="address" value={formData.address} onChange={(e) => handleChange("address", e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="occupants">Occupants</Label>
-          <Input
-            id="occupants"
-            type="number"
-            value={formData.occupants}
-            onChange={(e) => handleChange("occupants", Number.parseInt(e.target.value) || 0)}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="yearBuilt">Year Built</Label>
-          <Input
-            id="yearBuilt"
-            type="number"
-            value={formData.yearBuilt}
-            onChange={(e) => handleChange("yearBuilt", Number.parseInt(e.target.value) || 0)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="waterConsumption">Water (m³)</Label>
-          <Input
-            id="waterConsumption"
-            type="number"
-            value={formData.waterConsumption}
-            onChange={(e) => handleChange("waterConsumption", Number.parseInt(e.target.value) || 0)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="electricityConsumption">Electricity (kWh)</Label>
-          <Input
-            id="electricityConsumption"
-            type="number"
-            value={formData.electricityConsumption}
-            onChange={(e) => handleChange("electricityConsumption", Number.parseInt(e.target.value) || 0)}
-          />
-        </div>
-      </div>
-
-      <div className="pt-4 flex gap-2">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
-        </Button>
-        <Button onClick={() => onSubmit(formData)} className="flex-1">
-          {house ? "Update" : "Add"} House
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-// Map Editor Component
-export default function MapEditor() {
-  const [pins, setPins] = useState<Pin[]>(pinsData)
-  const [polygons, setPolygons] = useState(polygonData)
-  const [circles, setCircles] = useState<
+export default function MapViewer() {
+  const [polygons] = useState(polygonData)
+  const [circles] = useState<
     { id: string; center: [number, number]; radius: number; name: string; type: string }[]
   >([])
 
@@ -752,19 +754,10 @@ export default function MapEditor() {
 
   const [activeTab, setActiveTab] = useState("overview")
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState<boolean>(false)
-  const [editorMode, setEditorMode] = useState<EditorMode>("view")
+  const [, setIsMobile] = useState<boolean>(false)
 
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingPin, setEditingPin] = useState<Pin | null>(null)
-  const [editingHouse, setEditingHouse] = useState<HouseProperties | null>(null)
-
-  const [tempMarkerPosition, setTempMarkerPosition] = useState<[number, number] | null>(null)
-  const [drawingPolygon, setDrawingPolygon] = useState<[number, number][]>([])
-  const [drawingCircle, setDrawingCircle] = useState<{ center: [number, number]; radius: number } | null>(null)
-
-  const [showLayers, setShowLayers] = useState({
-    pins: true,
+  // Update the showLayers state to remove pins
+  const [showLayers,] = useState({
     polygons: true,
     circles: true,
   })
@@ -784,192 +777,17 @@ export default function MapEditor() {
     }
   }, [])
 
-  // Handle map click based on editor mode
-  const handleMapClick = (e: L.LeafletMouseEvent) => {
-    const { lat, lng } = e.latlng
-
-    if (editorMode === "add") {
-      setTempMarkerPosition([lat, lng])
-      setEditingPin(null)
-      setIsFormOpen(true)
-    } else if (editorMode === "draw-polygon") {
-      setDrawingPolygon((prev) => [...prev, [lat, lng]])
-    } else if (editorMode === "draw-circle") {
-      if (!drawingCircle) {
-        setDrawingCircle({ center: [lat, lng], radius: 50 })
-      }
-    }
-  }
-
-  // Handle pin click
-  const handlePinClick = (pin: PinProperties) => {
-    if (editorMode === "view") {
-      setSelectedPin(pin)
-      setSelectedHouse(null)
-      setActiveTab("overview")
-      setIsModalOpen(true)
-    } else if (editorMode === "delete") {
-      setPins(pins.filter((p) => p.properties.id !== pin.id))
-    }
-  }
-
   // Handle house click
   const handleHouseClick = (house: HouseProperties) => {
-    if (editorMode === "view") {
-      setSelectedHouse(house)
-    }
+    setSelectedHouse(house)
   }
 
-  // Handle edit pin
-  const handleEditPin = (pin: PinProperties) => {
-    const pinToEdit = pins.find((p) => p.properties.id === pin.id)
-    if (pinToEdit) {
-      setEditingPin(pinToEdit)
-      setIsFormOpen(true)
-    }
-  }
-
-  // Handle delete pin
-  const handleDeletePin = (pin: PinProperties) => {
-    setPins(pins.filter((p) => p.properties.id !== pin.id))
-  }
-
-  // Handle edit house
-  const handleEditHouse = (house: HouseProperties) => {
-    setEditingHouse(house)
-    setIsFormOpen(true)
-  }
-
-  // Handle delete house
-  const handleDeleteHouse = (house: HouseProperties) => {
-    if (selectedPin) {
-      const updatedPins = pins.map((pin) => {
-        if (pin.properties.id === selectedPin.id) {
-          return {
-            ...pin,
-            properties: {
-              ...pin.properties,
-              houses: pin.properties.houses.filter((h) => h.id !== house.id),
-            },
-          }
-        }
-        return pin
-      })
-      setPins(updatedPins)
-
-      // Update selected pin
-      const updatedPin = updatedPins.find((p) => p.properties.id === selectedPin.id)
-      if (updatedPin) {
-        setSelectedPin(updatedPin.properties)
-      }
-    }
-  }
-
-  // Handle add/update pin
-  const handlePinFormSubmit = (data: { position: [number, number]; properties: PinProperties }) => {
-    if (editingPin) {
-      // Update existing pin
-      setPins(pins.map((pin) => (pin.properties.id === editingPin.properties.id ? data : pin)))
-    } else {
-      // Add new pin
-      setPins([...pins, data])
-    }
-    setIsFormOpen(false)
-    setTempMarkerPosition(null)
-    setEditingPin(null)
-    setEditorMode("view")
-  }
-
-  // Handle add/update house
-  const handleHouseFormSubmit = (data: HouseProperties) => {
-    if (selectedPin) {
-      if (editingHouse) {
-        // Update existing house
-        const updatedPins = pins.map((pin) => {
-          if (pin.properties.id === selectedPin.id) {
-            return {
-              ...pin,
-              properties: {
-                ...pin.properties,
-                houses: pin.properties.houses.map((h) => (h.id === editingHouse.id ? data : h)),
-              },
-            }
-          }
-          return pin
-        })
-        setPins(updatedPins)
-
-        // Update selected pin
-        const updatedPin = updatedPins.find((p) => p.properties.id === selectedPin.id)
-        if (updatedPin) {
-          setSelectedPin(updatedPin.properties)
-        }
-      } else {
-        // Add new house
-        const updatedPins = pins.map((pin) => {
-          if (pin.properties.id === selectedPin.id) {
-            return {
-              ...pin,
-              properties: {
-                ...pin.properties,
-                houses: [...pin.properties.houses, data],
-              },
-            }
-          }
-          return pin
-        })
-        setPins(updatedPins)
-
-        // Update selected pin
-        const updatedPin = updatedPins.find((p) => p.properties.id === selectedPin.id)
-        if (updatedPin) {
-          setSelectedPin(updatedPin.properties)
-        }
-      }
-    }
-    setIsFormOpen(false)
-    setEditingHouse(null)
-  }
-
-  // Handle complete polygon drawing
-  const handleCompletePolygon = () => {
-    if (drawingPolygon.length >= 3) {
-      const newPolygon = {
-        id: `poly${Date.now()}`,
-        positions: drawingPolygon,
-        name: `Zone ${polygons.length + 1}`,
-        type: "New Zone",
-      }
-      setPolygons([...polygons, newPolygon])
-    }
-    setDrawingPolygon([])
-    setEditorMode("view")
-  }
-
-  // Handle complete circle drawing
-  const handleCompleteCircle = () => {
-    if (drawingCircle) {
-      const newCircle = {
-        id: `circle${Date.now()}`,
-        center: drawingCircle.center,
-        radius: drawingCircle.radius,
-        name: `Area ${circles.length + 1}`,
-        type: "New Area",
-      }
-      setCircles([...circles, newCircle])
-      setDrawingCircle(null)
-      setEditorMode("view")
-    }
-  }
-
-  // Handle circle radius change
-  const handleCircleRadiusChange = (value: number[]) => {
-    if (drawingCircle) {
-      setDrawingCircle({
-        ...drawingCircle,
-        radius: value[0],
-      })
-    }
+  // Handle polygon click
+  const handlePolygonClick = (polygon: (typeof polygonData)[0]) => {
+    setSelectedPolygon(polygon)
+    setSelectedHouse(null)
+    setActiveTab("overview")
+    setIsModalOpen(true)
   }
 
   // Close modal
@@ -990,38 +808,14 @@ export default function MapEditor() {
 
   // Map event handler component
   const MapEventHandler = () => {
-    const [editorMode, setEditorMode] = useState<string | null>(null)
-    const [tempMarkerPosition, setTempMarkerPosition] = useState<[number, number] | null>(null)
-    const [editingPin, setEditingPin] = useState<any>(null)
-    const [isFormOpen, setIsFormOpen] = useState<boolean>(false)
-    const [drawingPolygon, setDrawingPolygon] = useState<[number, number][]>([])
-    const [drawingCircle, setDrawingCircle] = useState<{ center: [number, number]; radius: number } | null>(null)
-  
-    const handleMapClick = (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng
-  
-      if (editorMode === "add") {
-        setTempMarkerPosition([lat, lng])
-        setEditingPin(null)
-        setIsFormOpen(true)
-      } else if (editorMode === "draw-polygon") {
-        setDrawingPolygon((prev) => [...prev, [lat, lng]])
-      } else if (editorMode === "draw-circle") {
-        if (!drawingCircle) {
-          setDrawingCircle({ center: [lat, lng], radius: 50 })
-        }
-      }
-    }
-  
     useMapEvents({
-      click: handleMapClick,
       contextmenu: (e) => {
         // Prevent the default context menu
         e.originalEvent.preventDefault()
-  
+
         const { lat, lng } = e.latlng
         const coordsText = `[${lat.toFixed(6)}, ${lng.toFixed(6)}]`
-  
+
         // Copy to clipboard
         navigator.clipboard
           .writeText(coordsText)
@@ -1040,208 +834,18 @@ export default function MapEditor() {
           })
       },
     })
-  
+
     return null
-  }
-  
-  // Export data as JSON
-  const exportData = () => {
-    const data = {
-      pins,
-      polygons,
-      circles,
-    }
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "map-data.json"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
   }
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden">
-      <header className="p-4 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+      {/* Update the header to not have blur when modal is present */}
+      <header className="p-4 border-b bg-background sticky top-0 z-[2001]">
         <div className="container mx-auto">
-          <h1 className="text-2xl font-bold text-center">Deca Homes Tunghaan Subdivision Map Editor</h1>
+          <h1 className="text-2xl font-bold text-center">Deca Homes Tunghaan Subdivision Map</h1>
         </div>
       </header>
-
-      {/* Editor Toolbar */}
-      <div className="bg-muted/50 border-b p-2">
-        <div className="container mx-auto flex flex-wrap items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={editorMode === "view" ? "default" : "outline"}
-                  onClick={() => {
-                    setEditorMode("view")
-                    setTempMarkerPosition(null)
-                    setDrawingPolygon([])
-                    setDrawingCircle(null)
-                  }}
-                >
-                  <Move className="h-4 w-4 mr-1" />
-                  View
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Navigate the map</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={editorMode === "add" ? "default" : "outline"}
-                  onClick={() => setEditorMode("add")}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Pin
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Click on map to add a new pin</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={editorMode === "edit" ? "default" : "outline"}
-                  onClick={() => setEditorMode("edit")}
-                >
-                  <Pencil className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Edit existing pins</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={editorMode === "delete" ? "default" : "outline"}
-                  onClick={() => setEditorMode("delete")}
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Click on pins to delete them</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <div className="h-6 w-px bg-border mx-1"></div>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={editorMode === "draw-polygon" ? "default" : "outline"}
-                  onClick={() => setEditorMode("draw-polygon")}
-                >
-                  <Square className="h-4 w-4 mr-1" />
-                  Draw Zone
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Click to add polygon points</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={editorMode === "draw-circle" ? "default" : "outline"}
-                  onClick={() => setEditorMode("draw-circle")}
-                >
-                  <CircleIcon className="h-4 w-4 mr-1" />
-                  Draw Area
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Click to place a circle</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <div className="h-6 w-px bg-border mx-1"></div>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setShowLayers((prev) => ({ ...prev, pins: !prev.pins }))
-                  }}
-                >
-                  <MapPin className={`h-4 w-4 mr-1 ${showLayers.pins ? "opacity-100" : "opacity-50"}`} />
-                  Pins
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Toggle pins visibility</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setShowLayers((prev) => ({ ...prev, polygons: !prev.polygons }))
-                  }}
-                >
-                  <Square className={`h-4 w-4 mr-1 ${showLayers.polygons ? "opacity-100" : "opacity-50"}`} />
-                  Zones
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Toggle zones visibility</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setShowLayers((prev) => ({ ...prev, circles: !prev.circles }))
-                  }}
-                >
-                  <CircleIcon className={`h-4 w-4 mr-1 ${showLayers.circles ? "opacity-100" : "opacity-50"}`} />
-                  Areas
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Toggle areas visibility</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <div className="ml-auto">
-            <Button size="sm" variant="default" onClick={exportData}>
-              <Save className="h-4 w-4 mr-1" />
-              Export
-            </Button>
-          </div>
-        </div>
-      </div>
 
       <div className="flex-1 relative">
         {typeof window !== "undefined" && (
@@ -1266,33 +870,62 @@ export default function MapEditor() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            {/* Render pins */}
-            {showLayers.pins &&
-              pins.map((pin) => (
-                <AnimatedMarker
-                  key={pin.properties.id}
-                  position={pin.position}
-                  properties={pin.properties}
-                  onClick={() => handlePinClick(pin.properties)}
-                  editable={editorMode === "edit"}
-                  onEdit={() => handleEditPin(pin.properties)}
-                  onDelete={() => handleDeletePin(pin.properties)}
-                />
-              ))}
-
             {/* Render polygons */}
             {showLayers.polygons &&
               polygons.map((polygon) => (
                 <Polygon
                   key={polygon.id}
                   positions={polygon.positions as unknown as L.LatLngExpression[][]}
-                  pathOptions={{ color: "purple", fillOpacity: 0.2 }}
+                  pathOptions={{
+                    color: polygon.color || "purple",
+                    fillOpacity: 0.2,
+                    weight: 2,
+                  }}
                   eventHandlers={{
-                    click: () => {
-                      if (editorMode === "view") {
-                        setSelectedPolygon(polygon)
-                        setIsModalOpen(true)
-                      }
+                    click: (e) => {
+                      // Get center of polygon for popup positioning
+                      const bounds = L.polygon(polygon.positions as unknown as L.LatLngExpression[][]).getBounds()
+                      const center = bounds.getCenter()
+
+                      // Create a popup at the center of the polygon
+                      L.popup()
+                        .setLatLng(center)
+                        .setContent(`
+                          <div class="p-2">
+                            <h3 class="font-bold text-primary">${polygon.name}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                              <span class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
+                                Block ${polygon.properties.blockNumber}
+                              </span>
+                              <span class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
+                                ${polygon.type}
+                              </span>
+                            </div>
+                            <p class="mt-2 text-sm">
+                              <span class="font-medium">Households:</span> ${polygon.properties.numberOfHouseholds}
+                            </p>
+                            <div class="flex gap-2 mt-2">
+                              <button 
+                                class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 w-full"
+                                onclick="document.getElementById('view-details-${polygon.id}').click()"
+                              >
+                                View Details
+                              </button>
+                              <button id="view-details-${polygon.id}" style="display:none;"></button>
+                            </div>
+                          </div>
+                        `)
+                        .openOn(e.target._map)
+
+                      // Add event listener to the hidden button
+                      setTimeout(() => {
+                        const button = document.getElementById(`view-details-${polygon.id}`)
+                        if (button) {
+                          button.addEventListener("click", () => {
+                            handlePolygonClick(polygon)
+                          })
+                        }
+                      }, 0)
                     },
                   }}
                 />
@@ -1308,149 +941,19 @@ export default function MapEditor() {
                   pathOptions={{ color: "green", fillOpacity: 0.2 }}
                   eventHandlers={{
                     click: () => {
-                      if (editorMode === "view") {
-                        setSelectedCircle(circle)
-                        setIsModalOpen(true)
-                      }
+                      setSelectedCircle(circle)
+                      setIsModalOpen(true)
                     },
                   }}
                 />
               ))}
-
-            {/* Temporary marker for adding new pin */}
-            {tempMarkerPosition && (
-              <DraggableMarker position={tempMarkerPosition} onDragEnd={(pos) => setTempMarkerPosition(pos)} />
-            )}
-
-            {/* Drawing polygon */}
-            {drawingPolygon.length > 0 && (
-              <>
-                <Polygon positions={drawingPolygon} pathOptions={{ color: "blue", fillOpacity: 0.2 }} />
-                {drawingPolygon.map((point, index) => (
-                  <Marker key={index} position={point} />
-                ))}
-              </>
-            )}
-
-            {/* Drawing circle */}
-            {drawingCircle && (
-              <>
-                <Circle
-                  center={drawingCircle.center}
-                  radius={drawingCircle.radius}
-                  pathOptions={{ color: "green", fillOpacity: 0.2 }}
-                />
-                <Marker position={drawingCircle.center} />
-              </>
-            )}
           </MapContainer>
-        )}
-
-        {/* Drawing controls */}
-        {editorMode === "draw-polygon" && drawingPolygon.length > 0 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-background border rounded-lg p-3 shadow-lg z-[1000]">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Points: {drawingPolygon.length}</span>
-              <Button size="sm" onClick={handleCompletePolygon}>
-                Complete Zone
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setDrawingPolygon([])}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {editorMode === "draw-circle" && drawingCircle && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-background border rounded-lg p-3 shadow-lg z-[1000] w-80">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Radius (meters):</span>
-                <span className="text-sm font-medium">{drawingCircle.radius}m</span>
-              </div>
-              <Slider
-                value={[drawingCircle.radius]}
-                min={10}
-                max={500}
-                step={10}
-                onValueChange={handleCircleRadiusChange}
-              />
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={handleCompleteCircle}>
-                  Complete Area
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setDrawingCircle(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
         )}
       </div>
 
-      {/* Pin/House Form Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingPin
-                ? "Edit Pin"
-                : editingHouse
-                  ? "Edit House"
-                  : tempMarkerPosition
-                    ? "Add New Pin"
-                    : "Add New House"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingPin || tempMarkerPosition
-                ? "Fill in the details for this location"
-                : "Fill in the details for this house"}
-            </DialogDescription>
-          </DialogHeader>
-
-          {editingPin || tempMarkerPosition ? (
-            <PinForm
-              pin={
-                editingPin ||
-                (tempMarkerPosition
-                  ? {
-                      position: tempMarkerPosition,
-                      properties: {
-                        id: `Pin${Date.now()}`,
-                        name: "",
-                        blockNumber: "",
-                        numberOfHouseholds: 0,
-                        totalResidents: 0,
-                        yearEstablished: new Date().getFullYear(),
-                        type: "Residential",
-                        houses: [],
-                      },
-                    }
-                  : undefined)
-              }
-              onSubmit={handlePinFormSubmit}
-              onCancel={() => {
-                setIsFormOpen(false)
-                setTempMarkerPosition(null)
-                setEditingPin(null)
-              }}
-            />
-          ) : (
-            <HouseForm
-              house={editingHouse || undefined}
-              onSubmit={handleHouseFormSubmit}
-              onCancel={() => {
-                setIsFormOpen(false)
-                setEditingHouse(null)
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Pin/House Details Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[600px] p-0 max-h-[90vh] overflow-hidden z-[2000]">
+        <DialogContent className="sm:max-w-[600px] p-0 max-h-[90vh] overflow-hidden z-[2002]">
           <AnimatePresence>
             {selectedPin && (
               <motion.div
@@ -1467,7 +970,7 @@ export default function MapEditor() {
                     </Button>
                   ) : null}
                   <DialogTitle className="text-xl">
-                    {selectedHouse ? selectedHouse.address : selectedPin.name}
+                    {selectedHouse ? `House ID: ${selectedHouse.id}` : selectedPin.name}
                   </DialogTitle>
                   <DialogDescription>
                     {selectedHouse
@@ -1486,53 +989,58 @@ export default function MapEditor() {
                           value={selectedHouse.occupants}
                         />
                         <StatCard
-                          icon={<Calendar className="h-4 w-4 text-primary" />}
-                          label="Year Built"
-                          value={selectedHouse.yearBuilt}
+                          icon={getStatusIcon(selectedHouse.status.type)}
+                          label="Status"
+                          value={selectedHouse.status.type}
                         />
                       </div>
 
                       <Card>
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-base">Consumption Data</CardTitle>
+                          <CardTitle className="text-base">Status Information</CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-3">
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-2">
-                                <Droplet className="h-4 w-4 text-blue-500" />
-                                <span>Water Consumption</span>
+                                <span>Current Status</span>
                               </div>
-                              <Badge variant="outline" className="bg-blue-50">
-                                {selectedHouse.waterConsumption} m³/month
+                              <Badge variant={getStatusVariant(selectedHouse.status.type)}>
+                                {selectedHouse.status.type}
                               </Badge>
                             </div>
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-2">
-                                <Zap className="h-4 w-4 text-yellow-500" />
-                                <span>Electricity Consumption</span>
+                                <span>Status Date</span>
                               </div>
-                              <Badge variant="outline" className="bg-yellow-50">
-                                {selectedHouse.electricityConsumption} kWh/month
-                              </Badge>
+                              <span className="text-sm">{selectedHouse.status.date}</span>
                             </div>
                           </div>
                         </CardContent>
                       </Card>
 
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => {
-                            handleEditHouse(selectedHouse)
-                            closeModal()
-                          }}
-                        >
-                          <Pencil className="h-4 w-4 mr-1" />
-                          Edit House
-                        </Button>
-                      </div>
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Incident History</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {selectedHouse.incidents.length > 0 ? (
+                            <div className="space-y-3">
+                              {selectedHouse.incidents.map((incident, index) => (
+                                <div key={index} className="bg-muted/50 p-3 rounded-md">
+                                  <div className="flex justify-between items-center">
+                                    <Badge variant="outline">{incident.type}</Badge>
+                                    <span className="text-xs text-muted-foreground">{incident.date}</span>
+                                  </div>
+                                  <p className="text-sm mt-2">{incident.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No incidents reported.</p>
+                          )}
+                        </CardContent>
+                      </Card>
                     </div>
                   ) : (
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="py-4">
@@ -1584,49 +1092,40 @@ export default function MapEditor() {
                             </p>
                           </CardContent>
                         </Card>
-
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => {
-                              handleEditPin(selectedPin)
-                              closeModal()
-                            }}
-                          >
-                            <Pencil className="h-4 w-4 mr-1" />
-                            Edit Block
-                          </Button>
-                        </div>
                       </TabsContent>
 
                       <TabsContent value="houses" className="mt-0">
                         <div className="flex justify-between items-center mb-3">
                           <h3 className="text-sm font-medium">Houses in this block</h3>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setEditingHouse(null)
-                              setIsFormOpen(true)
-                              closeModal()
-                            }}
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add House
-                          </Button>
                         </div>
                         <div className="grid grid-cols-1 gap-3">
                           {selectedPin.houses.map((house) => (
                             <HouseCard
                               key={house.id}
-                              house={house}
-                              onClick={() => handleHouseClick(house)}
-                              editable={true}
-                              onEdit={() => {
-                                handleEditHouse(house)
-                                closeModal()
+                              house={{
+                                ...house,
+                                status: {
+                                  ...house.status,
+                                  type: house.status.type as StatusType,
+                                },
+                                incidents: house.incidents.map((incident) => ({
+                                  ...incident,
+                                  type: incident.type as IncidentType,
+                                })),
                               }}
-                              onDelete={() => handleDeleteHouse(house)}
+                              onClick={() =>
+                                handleHouseClick({
+                                  ...house,
+                                  status: {
+                                    ...house.status,
+                                    type: house.status.type as StatusType,
+                                  },
+                                  incidents: house.incidents.map((incident) => ({
+                                    ...incident,
+                                    type: incident.type as IncidentType,
+                                  })),
+                                })
+                              }
                             />
                           ))}
                         </div>
@@ -1651,21 +1150,176 @@ export default function MapEditor() {
                 className="h-full flex flex-col"
               >
                 <DialogHeader className="px-6 pt-6 pb-2">
-                  <DialogTitle className="text-xl">{selectedPolygon.name}</DialogTitle>
-                  <DialogDescription>{selectedPolygon.type}</DialogDescription>
+                  {selectedHouse ? (
+                    <Button variant="ghost" size="sm" className="absolute left-4 top-4" onClick={goBackToPin}>
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Back
+                    </Button>
+                  ) : null}
+                  <DialogTitle className="text-xl">
+                    {selectedHouse ? `House ID: ${selectedHouse.id}` : selectedPolygon.name}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {selectedHouse
+                      ? `House details for ${selectedHouse.id}`
+                      : `${selectedPolygon.properties.blockNumber} - ${selectedPolygon.type}`}
+                  </DialogDescription>
                 </DialogHeader>
 
-                <div className="px-6 py-4 overflow-y-auto flex-1">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Zone Information</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        This zone contains {selectedPolygon.positions.length} points defining its boundary.
-                      </p>
-                    </CardContent>
-                  </Card>
+                <div className="px-6 overflow-y-auto flex-1">
+                  {selectedHouse ? (
+                    <div className="py-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <StatCard
+                          icon={<Users className="h-4 w-4 text-primary" />}
+                          label="Occupants"
+                          value={selectedHouse.occupants}
+                        />
+                        <StatCard
+                          icon={getStatusIcon(selectedHouse.status.type)}
+                          label="Status"
+                          value={selectedHouse.status.type}
+                        />
+                      </div>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Status Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                <span>Current Status</span>
+                              </div>
+                              <Badge variant={getStatusVariant(selectedHouse.status.type)}>
+                                {selectedHouse.status.type}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                <span>Status Date</span>
+                              </div>
+                              <span className="text-sm">{selectedHouse.status.date}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Incident History</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {selectedHouse.incidents.length > 0 ? (
+                            <div className="space-y-3">
+                              {selectedHouse.incidents.map((incident, index) => (
+                                <div key={index} className="bg-muted/50 p-3 rounded-md">
+                                  <div className="flex justify-between items-center">
+                                    <Badge variant="outline">{incident.type}</Badge>
+                                    <span className="text-xs text-muted-foreground">{incident.date}</span>
+                                  </div>
+                                  <p className="text-sm mt-2">{incident.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No incidents reported.</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : (
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="py-4">
+                      <TabsList className="grid grid-cols-2 mb-4">
+                        <TabsTrigger value="overview">
+                          <Info className="h-4 w-4 mr-2" />
+                          Overview
+                        </TabsTrigger>
+                        <TabsTrigger value="houses">
+                          <LayoutGrid className="h-4 w-4 mr-2" />
+                          Houses ({selectedPolygon.properties.houses.length})
+                        </TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="overview" className="space-y-4 mt-0">
+                        <div className="grid grid-cols-2 gap-3">
+                          <StatCard
+                            icon={<Home className="h-4 w-4 text-primary" />}
+                            label="Households"
+                            value={selectedPolygon.properties.numberOfHouseholds}
+                          />
+                          <StatCard
+                            icon={<Users className="h-4 w-4 text-primary" />}
+                            label="Residents"
+                            value={selectedPolygon.properties.totalResidents}
+                          />
+                          <StatCard
+                            icon={<Calendar className="h-4 w-4 text-primary" />}
+                            label="Established"
+                            value={selectedPolygon.properties.yearEstablished}
+                          />
+                          <StatCard
+                            icon={<Building2 className="h-4 w-4 text-primary" />}
+                            label="Type"
+                            value={selectedPolygon.properties.type}
+                          />
+                        </div>
+
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base">Zone Information</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-muted-foreground">
+                              {selectedPolygon.name} is located in the Deca Homes Tunghaan Subdivision. This{" "}
+                              {selectedPolygon.type.toLowerCase()} was established in{" "}
+                              {selectedPolygon.properties.yearEstablished}
+                              and currently houses {selectedPolygon.properties.totalResidents} residents across{" "}
+                              {selectedPolygon.properties.numberOfHouseholds} households.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+
+                      <TabsContent value="houses" className="mt-0">
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-sm font-medium">Houses in this zone</h3>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          {selectedPolygon.properties.houses.map((house) => (
+                            <HouseCard
+                              key={house.id}
+                              house={{
+                                ...house,
+                                status: {
+                                  ...house.status,
+                                  type: house.status.type as StatusType,
+                                },
+                                incidents: house.incidents.map((incident) => ({
+                                  ...incident,
+                                  type: incident.type as IncidentType,
+                                })),
+                              }}
+                              onClick={() =>
+                                handleHouseClick({
+                                  ...house,
+                                  status: {
+                                    ...house.status,
+                                    type: house.status.type as StatusType,
+                                  },
+                                  incidents: house.incidents.map((incident) => ({
+                                    ...incident,
+                                    type: incident.type as IncidentType,
+                                  })),
+                                })
+                              }
+                            />
+                          ))}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  )}
                 </div>
 
                 <CardFooter className="border-t p-4 mt-auto">
