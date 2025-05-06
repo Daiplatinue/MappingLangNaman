@@ -1,6 +1,7 @@
 import type React from "react"
+
 import { useState, useEffect, useRef } from "react"
-import { MapContainer, TileLayer, useMap, useMapEvents, Circle, Polygon } from "react-leaflet"
+import { MapContainer, TileLayer, useMap, useMapEvents, Circle, Polygon, Marker } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,612 +9,24 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Users, Home, Calendar, Info, LayoutGrid, ChevronLeft } from "lucide-react"
+import { Building2, Users, Home, Calendar, Info, LayoutGrid, ChevronLeft, Shield, Clock } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-const CENTER_POSITION: [number, number] = [10.249231, 123.78923]
-const INITIAL_ZOOM = 18
-
-// Define the allowed status and incident types as string literals
-type StatusType =
-  | "Occupied"
-  | "Under Renovation"
-  | "Upcoming Renovation"
-  | "Under Construction"
-  | "Upcoming Construction"
-type IncidentType = "Maintenance" | "Noise" | "Construction" | "Other"
-
-interface HouseProperties {
-  id: string
-  occupants: number
-  status: {
-    type: StatusType
-    date: string
-  }
-  incidents: {
-    type: IncidentType
-    description: string
-    date: string
-  }[]
-}
-
-interface PinProperties {
-  id: string
-  name: string
-  blockNumber: string
-  numberOfHouseholds: number
-  totalResidents: number
-  yearEstablished: number
-  type: string
-  houses: HouseProperties[]
-}
-
-// Update the polygonData array to include more detailed properties and colors
-const polygonData = [
-  {
-    id: "zone1",
-    positions: [
-      [10.250039, 123.787369],
-      [10.250028, 123.787283],
-      [10.249163, 123.787508],
-      [10.249178, 123.787605],
-    ],
-    name: "Zone A1",
-    type: "Residential Zone",
-    color: "#8B5CF6", // purple
-    properties: {
-      id: "Zone1",
-      name: "Zone A1",
-      blockNumber: "A1",
-      numberOfHouseholds: 25,
-      totalResidents: 95,
-      yearEstablished: 2010,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "A1-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Jan 2022",
-          },
-          incidents: [
-            {
-              type: "Maintenance",
-              description: "Water leak in bathroom requiring plumbing repair",
-              date: "Mar 15, 2023",
-            },
-          ],
-        },
-        {
-          id: "A1-2",
-          occupants: 3,
-          status: {
-            type: "Under Renovation",
-            date: "Started Apr 2023",
-          },
-          incidents: [
-            {
-              type: "Noise",
-              description: "Complaint from neighbors about construction noise",
-              date: "Apr 20, 2023",
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone2",
-    positions: [
-      [10.250034, 123.787497],
-      [10.250055, 123.787578],
-      [10.249226, 123.787819],
-      [10.249194, 123.787712],
-    ],
-    name: "Zone A2",
-    type: "Residential Zone",
-    color: "#8B5CF6", // purple
-    properties: {
-      id: "Zone2",
-      name: "Zone A2",
-      blockNumber: "A2",
-      numberOfHouseholds: 22,
-      totalResidents: 88,
-      yearEstablished: 2010,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "A2-1",
-          occupants: 5,
-          status: {
-            type: "Occupied",
-            date: "Since Feb 2022",
-          },
-          incidents: [
-            {
-              type: "Other",
-              description: "Minor fire incident in the kitchen",
-              date: "Jun 10, 2023",
-            },
-          ],
-        },
-        {
-          id: "A2-2",
-          occupants: 4,
-          status: {
-            type: "Upcoming Construction",
-            date: "Starting Jul 2023",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-
-  // Upper middle zones
-  {
-    id: "zone3",
-    positions: [
-      [10.249939, 123.788275],
-      [10.250139, 123.788962],
-      [10.250261, 123.78894],
-      [10.250049, 123.788227],
-    ],
-    name: "Zone B1",
-    type: "Residential Zone",
-    color: "#EC4899", // pink
-    properties: {
-      id: "Zone3",
-      name: "Zone B1",
-      blockNumber: "B1",
-      numberOfHouseholds: 18,
-      totalResidents: 72,
-      yearEstablished: 2011,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "B1-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Mar 2022",
-          },
-          incidents: [],
-        },
-        {
-          id: "B1-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Apr 2022",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone4",
-    positions: [
-      [10.249822, 123.788329],
-      [10.249875, 123.788468],
-      [10.249347, 123.788972],
-      [10.249236, 123.788881],
-    ],
-    name: "Zone B2",
-    type: "Residential Zone",
-    color: "#EC4899", // pink
-    properties: {
-      id: "Zone4",
-      name: "Zone B2",
-      blockNumber: "B2",
-      numberOfHouseholds: 20,
-      totalResidents: 80,
-      yearEstablished: 2011,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "B2-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since May 2022",
-          },
-          incidents: [],
-        },
-        {
-          id: "B2-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Jun 2022",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone5",
-    positions: [
-      [10.249917, 123.788624],
-      [10.249965, 123.788758],
-      [10.249522, 123.78916],
-      [10.249379, 123.789123],
-    ],
-    name: "Zone B3",
-    type: "Residential Zone",
-    color: "#EC4899", // pink
-    properties: {
-      id: "Zone5",
-      name: "Zone B3",
-      blockNumber: "B3",
-      numberOfHouseholds: 15,
-      totalResidents: 60,
-      yearEstablished: 2011,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "B3-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Jul 2022",
-          },
-          incidents: [],
-        },
-        {
-          id: "B3-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Aug 2022",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-
-  // Middle zones
-  {
-    id: "zone6",
-    positions: [
-      [10.249991, 123.788913],
-      [10.250007, 123.789026],
-      [10.249754, 123.789284],
-      [10.249622, 123.789219],
-    ],
-    name: "Zone C1",
-    type: "Residential Zone",
-    color: "#10B981", // green
-    properties: {
-      id: "Zone6",
-      name: "Zone C1",
-      blockNumber: "C1",
-      numberOfHouseholds: 16,
-      totalResidents: 64,
-      yearEstablished: 2012,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "C1-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Sep 2022",
-          },
-          incidents: [],
-        },
-        {
-          id: "C1-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Oct 2022",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone7",
-    positions: [
-      [10.248434, 123.789332],
-      [10.248434, 123.789209],
-      [10.248867, 123.789187],
-      [10.249236, 123.78923],
-      [10.249664, 123.789402],
-      [10.249595, 123.789514],
-      [10.249094, 123.789321],
-    ],
-    name: "Zone C2",
-    type: "Residential Zone",
-    color: "#10B981", // green
-    properties: {
-      id: "Zone7",
-      name: "Zone C2",
-      blockNumber: "C2",
-      numberOfHouseholds: 17,
-      totalResidents: 68,
-      yearEstablished: 2012,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "C2-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Nov 2022",
-          },
-          incidents: [],
-        },
-        {
-          id: "C2-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Dec 2022",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-
-  // Lower zones (Saint Mary area)
-  {
-    id: "zone8",
-    positions: [
-      [10.249532, 123.789659],
-      [10.249506, 123.78975],
-      [10.248983, 123.789584],
-      [10.248455, 123.789605],
-      [10.248424, 123.789466],
-      [10.248951, 123.78945],
-    ],
-    name: "Zone D1",
-    type: "Residential Zone",
-    color: "#F59E0B", // amber
-    properties: {
-      id: "Zone8",
-      name: "Zone D1",
-      blockNumber: "D1",
-      numberOfHouseholds: 14,
-      totalResidents: 56,
-      yearEstablished: 2013,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "D1-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Jan 2023",
-          },
-          incidents: [],
-        },
-        {
-          id: "D1-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Feb 2023",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone9",
-    positions: [
-      [10.248619, 123.788833],
-      [10.248614, 123.789053],
-      [10.248677, 123.789048],
-      [10.248687, 123.788828],
-    ],
-    name: "Zone D2",
-    type: "Residential Zone",
-    color: "#F59E0B", // amber
-    properties: {
-      id: "Zone9",
-      name: "Zone D2",
-      blockNumber: "D2",
-      numberOfHouseholds: 12,
-      totalResidents: 48,
-      yearEstablished: 2013,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "D2-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Mar 2023",
-          },
-          incidents: [],
-        },
-        {
-          id: "D2-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Apr 2023",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone10",
-    positions: [
-      [10.248397, 123.789069],
-      [10.248471, 123.789058],
-      [10.248487, 123.788822],
-      [10.248397, 123.788822],
-    ],
-    name: "Zone D3",
-    type: "Residential Zone",
-    color: "#F59E0B", // amber
-    properties: {
-      id: "Zone10",
-      name: "Zone D3",
-      blockNumber: "D3",
-      numberOfHouseholds: 10,
-      totalResidents: 40,
-      yearEstablished: 2013,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "D3-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since May 2023",
-          },
-          incidents: [],
-        },
-        {
-          id: "D3-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Jun 2023",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone11",
-    positions: [
-      [10.248197, 123.789783],
-      [10.24817, 123.788822],
-      [10.24827, 123.788801],
-      [10.248302, 123.789783],
-    ],
-    name: "Zone D4",
-    type: "Residential Zone",
-    color: "#F59E0B", // amber
-    properties: {
-      id: "Zone11",
-      name: "Zone D4",
-      blockNumber: "D4",
-      numberOfHouseholds: 11,
-      totalResidents: 44,
-      yearEstablished: 2013,
-      type: "Residential Zone",
-      houses: [
-        {
-          id: "D4-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Jul 2023",
-          },
-          incidents: [],
-        },
-        {
-          id: "D4-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Aug 2023",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone12",
-    positions: [
-      [10.248603, 123.79099],
-      [10.24835, 123.789917],
-      [10.248434, 123.789933],
-      [10.248719, 123.790957],
-    ],
-    name: "Zone D5",
-    type: "Commercial Zone",
-    color: "#EF4444", // red
-    properties: {
-      id: "Zone12",
-      name: "Zone D5",
-      blockNumber: "D5",
-      numberOfHouseholds: 13,
-      totalResidents: 52,
-      yearEstablished: 2013,
-      type: "Commercial Zone",
-      houses: [
-        {
-          id: "D5-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Sep 2023",
-          },
-          incidents: [],
-        },
-        {
-          id: "D5-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Oct 2023",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-  {
-    id: "zone13",
-    positions: [
-      [10.248075, 123.789943],
-      [10.248276, 123.790829],
-      [10.248424, 123.790823],
-      [10.248197, 123.789943],
-    ],
-    name: "Zone D6",
-    type: "Community Zone",
-    color: "#3B82F6", // blue
-    properties: {
-      id: "Zone13",
-      name: "Zone D6",
-      blockNumber: "D6",
-      numberOfHouseholds: 9,
-      totalResidents: 36,
-      yearEstablished: 2013,
-      type: "Community Zone",
-      houses: [
-        {
-          id: "D6-1",
-          occupants: 4,
-          status: {
-            type: "Occupied",
-            date: "Since Nov 2023",
-          },
-          incidents: [],
-        },
-        {
-          id: "D6-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Dec 2023",
-          },
-          incidents: [],
-        },
-      ],
-    },
-  },
-]
+import {
+  CENTER_POSITION,
+  INITIAL_ZOOM,
+  securityEntrances,
+  polygonData,
+  circleData,
+  type StatusType,
+  type HouseProperties,
+  type PinProperties,
+  type SecurityEntrance,
+  type PolygonData,
+  type CircleData,
+} from "./subdivision-data"
 
 const MapInitializer = () => {
   const map = useMap()
@@ -628,13 +41,9 @@ const MapInitializer = () => {
 }
 
 const CoordinatesDisplay = () => {
-  const [position, setPosition] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 })
+  const [position, ] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 })
 
-  const map = useMapEvents({
-    mousemove: (e) => {
-      setPosition({ lat: e.latlng.lat, lng: e.latlng.lng })
-    },
-  })
+  const map = useMap()
 
   return (
     <div className="absolute top-0 left-0 right-0 z-[1000] bg-background/80 backdrop-blur-sm text-xs p-2 flex justify-center">
@@ -741,25 +150,40 @@ const StatCard = ({ icon, label, value }: { icon: React.ReactNode; label: string
   )
 }
 
+// Custom marker icon for security entrances
+const createSecurityIcon = () => {
+  return L.divIcon({
+    html: `<div class="flex items-center justify-center w-8 h-8 bg-sky-500 text-white rounded-full border-2 border-white shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="lucide lucide-shield"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+          </div>`,
+    className: "",
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  })
+}
+
 export default function MapViewer() {
   const [polygons] = useState(polygonData)
-  const [circles] = useState<
-    { id: string; center: [number, number]; radius: number; name: string; type: string }[]
-  >([])
+  const [circles] = useState(circleData)
 
   const [selectedPin, setSelectedPin] = useState<PinProperties | null>(null)
   const [selectedHouse, setSelectedHouse] = useState<HouseProperties | null>(null)
-  const [selectedPolygon, setSelectedPolygon] = useState<(typeof polygonData)[0] | null>(null)
-  const [selectedCircle, setSelectedCircle] = useState<(typeof circles)[0] | null>(null)
+  const [selectedPolygon, setSelectedPolygon] = useState<PolygonData | null>(null)
+  const [selectedCircle, setSelectedCircle] = useState<CircleData | null>(null)
+  const [selectedEntrance, setSelectedEntrance] = useState<SecurityEntrance | null>(null)
 
   const [activeTab, setActiveTab] = useState("overview")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [, setIsMobile] = useState<boolean>(false)
 
-  // Update the showLayers state to remove pins
-  const [showLayers,] = useState({
+  // Add a state for expanded details view
+  const [showFullDetails, setShowFullDetails] = useState(false)
+
+  // Update the showLayers state to include security entrances
+  const [showLayers] = useState({
     polygons: true,
-    circles: true,
+    circles: false,
+    securityEntrances: true,
   })
 
   const mapRef = useRef<L.Map | null>(null)
@@ -780,25 +204,38 @@ export default function MapViewer() {
   // Handle house click
   const handleHouseClick = (house: HouseProperties) => {
     setSelectedHouse(house)
+    setSelectedEntrance(null)
   }
 
   // Handle polygon click
-  const handlePolygonClick = (polygon: (typeof polygonData)[0]) => {
+  const handlePolygonClick = (polygon: PolygonData) => {
     setSelectedPolygon(polygon)
     setSelectedHouse(null)
+    setSelectedEntrance(null)
     setActiveTab("overview")
+    setIsModalOpen(true)
+  }
+
+  // Update the handleEntranceClick function to reset the expanded state
+  const handleEntranceClick = (entrance: SecurityEntrance) => {
+    setSelectedEntrance(entrance)
+    setSelectedPolygon(null)
+    setSelectedPin(null)
+    setSelectedHouse(null)
+    setSelectedCircle(null)
+    setShowFullDetails(false)
     setIsModalOpen(true)
   }
 
   // Close modal
   const closeModal = () => {
     setIsModalOpen(false)
-    setTimeout(() => {
-      setSelectedPin(null)
-      setSelectedHouse(null)
-      setSelectedPolygon(null)
-      setSelectedCircle(null)
-    }, 300)
+    setSelectedPin(null)
+    setSelectedHouse(null)
+    setSelectedPolygon(null)
+    setSelectedCircle(null)
+    setSelectedEntrance(null)
+    setShowFullDetails(false)
   }
 
   // Go back to pin from house view
@@ -869,6 +306,21 @@ export default function MapViewer() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+
+            {/* Render security entrance markers */}
+            {showLayers.securityEntrances &&
+              securityEntrances.map((entrance) => (
+                <Marker
+                  key={entrance.id}
+                  position={entrance.position}
+                  icon={createSecurityIcon()}
+                  eventHandlers={{
+                    click: () => {
+                      handleEntranceClick(entrance)
+                    },
+                  }}
+                />
+              ))}
 
             {/* Render polygons */}
             {showLayers.polygons &&
@@ -951,7 +403,7 @@ export default function MapViewer() {
         )}
       </div>
 
-      {/* Pin/House Details Dialog */}
+      {/* Pin/House/Security Details Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[600px] p-0 max-h-[90vh] overflow-hidden z-[2002]">
           <AnimatePresence>
@@ -1100,33 +552,7 @@ export default function MapViewer() {
                         </div>
                         <div className="grid grid-cols-1 gap-3">
                           {selectedPin.houses.map((house) => (
-                            <HouseCard
-                              key={house.id}
-                              house={{
-                                ...house,
-                                status: {
-                                  ...house.status,
-                                  type: house.status.type as StatusType,
-                                },
-                                incidents: house.incidents.map((incident) => ({
-                                  ...incident,
-                                  type: incident.type as IncidentType,
-                                })),
-                              }}
-                              onClick={() =>
-                                handleHouseClick({
-                                  ...house,
-                                  status: {
-                                    ...house.status,
-                                    type: house.status.type as StatusType,
-                                  },
-                                  incidents: house.incidents.map((incident) => ({
-                                    ...incident,
-                                    type: incident.type as IncidentType,
-                                  })),
-                                })
-                              }
-                            />
+                            <HouseCard key={house.id} house={house} onClick={() => handleHouseClick(house)} />
                           ))}
                         </div>
                       </TabsContent>
@@ -1156,7 +582,7 @@ export default function MapViewer() {
                       Back
                     </Button>
                   ) : null}
-                  <DialogTitle className="text-xl">
+                  <DialogTitle className="text-xl mt-8">
                     {selectedHouse ? `House ID: ${selectedHouse.id}` : selectedPolygon.name}
                   </DialogTitle>
                   <DialogDescription>
@@ -1288,33 +714,7 @@ export default function MapViewer() {
                         </div>
                         <div className="grid grid-cols-1 gap-3">
                           {selectedPolygon.properties.houses.map((house) => (
-                            <HouseCard
-                              key={house.id}
-                              house={{
-                                ...house,
-                                status: {
-                                  ...house.status,
-                                  type: house.status.type as StatusType,
-                                },
-                                incidents: house.incidents.map((incident) => ({
-                                  ...incident,
-                                  type: incident.type as IncidentType,
-                                })),
-                              }}
-                              onClick={() =>
-                                handleHouseClick({
-                                  ...house,
-                                  status: {
-                                    ...house.status,
-                                    type: house.status.type as StatusType,
-                                  },
-                                  incidents: house.incidents.map((incident) => ({
-                                    ...incident,
-                                    type: incident.type as IncidentType,
-                                  })),
-                                })
-                              }
-                            />
+                            <HouseCard key={house.id} house={house} onClick={() => handleHouseClick(house)} />
                           ))}
                         </div>
                       </TabsContent>
@@ -1323,6 +723,246 @@ export default function MapViewer() {
                 </div>
 
                 <CardFooter className="border-t p-4 mt-auto">
+                  <Button variant="outline" className="w-full" onClick={closeModal}>
+                    Close
+                  </Button>
+                </CardFooter>
+              </motion.div>
+            )}
+
+            {/* Security Entrance Details - Fixed scrolling issue */}
+            {selectedEntrance && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full flex flex-col"
+              >
+                <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <DialogTitle className="text-xl">{selectedEntrance.name}</DialogTitle>
+                      <DialogDescription>Security checkpoint</DialogDescription>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        As of{" "}
+                        {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                        at {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => (window.location.href = "/")}
+                      className="flex items-center gap-1"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="lucide lucide-log-out"
+                      >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      Logout
+                    </Button>
+                  </div>
+                </DialogHeader>
+
+                {/* Added max-h-[calc(90vh-180px)] to fix scrolling issue */}
+                <div className="px-6 overflow-y-auto flex-1 max-h-[calc(90vh-180px)]">
+                  <div className="py-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-5 w-5 text-red-500" />
+                        <h3 className="font-medium text-lg">Security Assignment</h3>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setShowFullDetails(!showFullDetails)}>
+                        {showFullDetails ? "Hide Details" : "Show Details"}
+                      </Button>
+                    </div>
+
+                    {/* Show all guards grouped by shift */}
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-medium mb-2 flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          Morning Shift (6AM-2PM)
+                        </h4>
+                        {selectedEntrance.guards
+                          .filter((guard) => guard.shift.includes("Morning"))
+                          .map((guard) => (
+                            <Card key={guard.id} className="p-4 mb-2">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage
+                                    src={guard.photo || "/placeholder.svg?height=40&width=40"}
+                                    alt={guard.name}
+                                  />
+                                  <AvatarFallback>
+                                    {guard.name
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start">
+                                    <h3 className="font-medium">{guard.name}</h3>
+                                    <Badge variant="default">On Duty</Badge>
+                                  </div>
+                                  {showFullDetails && (
+                                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                      <div>
+                                        <span className="text-muted-foreground">Contact:</span>
+                                        <p>{guard.contactNumber}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Email:</span>
+                                        <p className="truncate">{guard.email}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-medium mb-2 flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          Evening Shift (2PM-10PM)
+                        </h4>
+                        {selectedEntrance.guards
+                          .filter((guard) => guard.shift.includes("Evening"))
+                          .map((guard) => (
+                            <Card key={guard.id} className="p-4 mb-2">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage
+                                    src={guard.photo || "/placeholder.svg?height=40&width=40"}
+                                    alt={guard.name}
+                                  />
+                                  <AvatarFallback>
+                                    {guard.name
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start">
+                                    <h3 className="font-medium">{guard.name}</h3>
+                                    <Badge variant="default">On Duty</Badge>
+                                  </div>
+                                  {showFullDetails && (
+                                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                      <div>
+                                        <span className="text-muted-foreground">Contact:</span>
+                                        <p>{guard.contactNumber}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Email:</span>
+                                        <p className="truncate">{guard.email}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-medium mb-2 flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          Night Shift (10PM-6AM)
+                        </h4>
+                        {selectedEntrance.guards
+                          .filter((guard) => guard.shift.includes("Night"))
+                          .map((guard) => (
+                            <Card key={guard.id} className="p-4 mb-2">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage
+                                    src={guard.photo || "/placeholder.svg?height=40&width=40"}
+                                    alt={guard.name}
+                                  />
+                                  <AvatarFallback>
+                                    {guard.name
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start">
+                                    <h3 className="font-medium">{guard.name}</h3>
+                                    <Badge variant="default">On Duty</Badge>
+                                  </div>
+                                  {showFullDetails && (
+                                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                      <div>
+                                        <span className="text-muted-foreground">Contact:</span>
+                                        <p>{guard.contactNumber}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Email:</span>
+                                        <p className="truncate">{guard.email}</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                      </div>
+                    </div>
+
+                    {showFullDetails && (
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Additional Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Total Guards:</span>
+                              <Badge variant="outline">{selectedEntrance.guards.length}</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Security Level:</span>
+                              <Badge variant="default">High</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Last Inspection:</span>
+                              <span className="text-sm">April 30, 2025</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Equipment Status:</span>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
+                                Operational
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm">Emergency Protocol:</span>
+                              <span className="text-sm">Protocol B-7</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
+
+                <CardFooter className="border-t p-4 mt-auto flex-shrink-0">
                   <Button variant="outline" className="w-full" onClick={closeModal}>
                     Close
                   </Button>

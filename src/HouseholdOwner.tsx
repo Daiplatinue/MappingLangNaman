@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 
 import { useState } from "react"
@@ -202,7 +200,7 @@ const EmergencyRequestDialog = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="destructive" className="w-full gap-2">
+        <Button className="w-full gap-2 bg-red-500 hover:bg-red-600">
           <AlertTriangle className="h-4 w-4" />
           Emergency Request
         </Button>
@@ -238,7 +236,7 @@ const EmergencyRequestDialog = () => {
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" variant="destructive">
+          <Button type="submit" className="bg-red-500 hover:bg-red-600">
             Submit Emergency Request
           </Button>
         </DialogFooter>
@@ -550,10 +548,6 @@ function HouseholdOwner() {
           <TabsContent value="requests" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold">Requests & Incidents</h2>
-              <div className="flex gap-2">
-                <NewRequestDialog />
-                <ReportIncidentDialog />
-              </div>
             </div>
 
             <Card>
