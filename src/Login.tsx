@@ -132,7 +132,7 @@ function Login() {
       {/* Left side with image and overlay text */}
       <div className="relative hidden md:block md:w-3/5">
         <img
-          src="https://cdn.pixabay.com/photo/2025/02/24/19/54/moon-9428951_1280.jpg"
+          src="https://cdn.pixabay.com/photo/2022/07/10/19/30/house-7313645_1280.jpg"
           className="h-full w-full object-cover"
           alt="Background"
         />

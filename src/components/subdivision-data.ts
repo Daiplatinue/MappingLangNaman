@@ -1,10 +1,31 @@
 // Types
 export type StatusType =
   | "Occupied"
+  | "Unoccupied"
   | "Under Renovation"
   | "Upcoming Renovation"
   | "Under Construction"
   | "Upcoming Construction"
+
+// Helper function to get color based on status
+export function getStatusColor(status: StatusType): string {
+  switch (status) {
+    case "Occupied":
+      return "#10B981" // green
+    case "Unoccupied":
+      return "#10B981" // green (same as Occupied)
+    case "Under Renovation":
+      return "#F59E0B" // amber
+    case "Upcoming Renovation":
+      return "#3B82F6" // blue
+    case "Under Construction":
+      return "#EF4444" // red
+    case "Upcoming Construction":
+      return "#8B5CF6" // purple
+    default:
+      return "#10B981" // default green
+  }
+}
 
 export type IncidentType = "Maintenance" | "Noise" | "Construction" | "Other"
 
@@ -178,38 +199,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 95,
       yearEstablished: 2010,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "A1-1",
-          occupants: 4,
+      houses: Array.from({ length: 25 }, (_, i) => {
+        const houseId = `A1-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Jan 2022",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [
-            {
-              type: "Maintenance",
-              description: "Water leak in bathroom requiring plumbing repair",
-              date: "Mar 15, 2023",
-            },
-          ],
-        },
-        {
-          id: "A1-2",
-          occupants: 3,
-          status: {
-            type: "Under Renovation",
-            date: "Started Apr 2023",
-          },
-          incidents: [
-            {
-              type: "Noise",
-              description: "Complaint from neighbors about construction noise",
-              date: "Apr 20, 2023",
-            },
-          ],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -231,32 +305,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 88,
       yearEstablished: 2010,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "A2-1",
-          occupants: 5,
+      houses: Array.from({ length: 22 }, (_, i) => {
+        const houseId = `A2-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Feb 2022",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [
-            {
-              type: "Other",
-              description: "Minor fire incident in the kitchen",
-              date: "Jun 10, 2023",
-            },
-          ],
-        },
-        {
-          id: "A2-2",
-          occupants: 4,
-          status: {
-            type: "Upcoming Construction",
-            date: "Starting Jul 2023",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
 
@@ -280,26 +413,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 72,
       yearEstablished: 2011,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "B1-1",
-          occupants: 4,
+      houses: Array.from({ length: 18 }, (_, i) => {
+        const houseId = `B1-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Mar 2022",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "B1-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Apr 2022",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -321,26 +519,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 80,
       yearEstablished: 2011,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "B2-1",
-          occupants: 4,
+      houses: Array.from({ length: 20 }, (_, i) => {
+        const houseId = `B2-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since May 2022",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "B2-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Jun 2022",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -362,26 +625,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 60,
       yearEstablished: 2011,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "B3-1",
-          occupants: 4,
+      houses: Array.from({ length: 15 }, (_, i) => {
+        const houseId = `B3-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Jul 2022",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "B3-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Aug 2022",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
 
@@ -390,7 +718,7 @@ export const polygonData: PolygonData[] = [
     id: "zone6",
     positions: [
       [10.249991, 123.788913],
-      [10.250007, 123.789026],
+      [10.249999, 123.789026],
       [10.249754, 123.789284],
       [10.249622, 123.789219],
     ],
@@ -405,26 +733,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 64,
       yearEstablished: 2012,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "C1-1",
-          occupants: 4,
+      houses: Array.from({ length: 16 }, (_, i) => {
+        const houseId = `C1-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Sep 2022",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "C1-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Oct 2022",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -449,26 +842,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 68,
       yearEstablished: 2012,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "C2-1",
-          occupants: 4,
+      houses: Array.from({ length: 17 }, (_, i) => {
+        const houseId = `C2-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Nov 2022",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "C2-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Dec 2022",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
 
@@ -494,26 +952,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 56,
       yearEstablished: 2013,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "D1-1",
-          occupants: 4,
+      houses: Array.from({ length: 14 }, (_, i) => {
+        const houseId = `D1-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Jan 2023",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "D1-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Feb 2023",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -535,26 +1058,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 48,
       yearEstablished: 2013,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "D2-1",
-          occupants: 4,
+      houses: Array.from({ length: 12 }, (_, i) => {
+        const houseId = `D2-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Mar 2023",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "D2-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Apr 2023",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -576,26 +1164,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 40,
       yearEstablished: 2013,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "D3-1",
-          occupants: 4,
+      houses: Array.from({ length: 10 }, (_, i) => {
+        const houseId = `D3-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since May 2023",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "D3-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Jun 2023",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -617,26 +1270,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 44,
       yearEstablished: 2013,
       type: "Residential Zone",
-      houses: [
-        {
-          id: "D4-1",
-          occupants: 4,
+      houses: Array.from({ length: 11 }, (_, i) => {
+        const houseId = `D4-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Jul 2023",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "D4-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Aug 2023",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -658,26 +1376,91 @@ export const polygonData: PolygonData[] = [
       totalResidents: 52,
       yearEstablished: 2013,
       type: "Commercial Zone",
-      houses: [
-        {
-          id: "D5-1",
-          occupants: 4,
+      houses: Array.from({ length: 13 }, (_, i) => {
+        const houseId = `D5-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Sep 2023",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "D5-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Oct 2023",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
   },
   {
@@ -699,53 +1482,92 @@ export const polygonData: PolygonData[] = [
       totalResidents: 36,
       yearEstablished: 2013,
       type: "Community Zone",
-      houses: [
-        {
-          id: "D6-1",
-          occupants: 4,
+      houses: Array.from({ length: 9 }, (_, i) => {
+        const houseId = `D6-${i + 1}`
+        const statusTypes: StatusType[] = [
+          "Occupied",
+          "Unoccupied",
+          "Under Renovation",
+          "Upcoming Renovation",
+          "Under Construction",
+          "Upcoming Construction",
+        ]
+        const statusType =
+          Math.random() < 0.6
+            ? "Occupied"
+            : Math.random() < 0.3
+              ? "Unoccupied"
+              : statusTypes[Math.floor(Math.random() * (statusTypes.length - 2)) + 2]
+
+        // Set occupants to 0 if unoccupied
+        const occupants = statusType === "Unoccupied" ? 0 : Math.floor(Math.random() * 6) + 1
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const randomMonth = months[Math.floor(Math.random() * months.length)]
+        const randomYear = 2022 + Math.floor(Math.random() * 3) // 2022-2024
+
+        const incidentTypes: IncidentType[] = ["Maintenance", "Noise", "Construction", "Other"]
+
+        // No incidents if unoccupied
+        const hasIncidents = statusType !== "Unoccupied" && Math.random() < 0.4
+        const numIncidents = hasIncidents ? Math.floor(Math.random() * 3) + 1 : 0
+
+        return {
+          id: houseId,
+          occupants,
           status: {
-            type: "Occupied",
-            date: "Since Nov 2023",
+            type: statusType as StatusType,
+            date: `Since ${randomMonth} ${randomYear}`,
           },
-          incidents: [],
-        },
-        {
-          id: "D6-2",
-          occupants: 3,
-          status: {
-            type: "Occupied",
-            date: "Since Dec 2023",
-          },
-          incidents: [],
-        },
-      ],
+          incidents: Array.from({ length: numIncidents }, () => {
+            const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+            const day = Math.floor(Math.random() * 28) + 1
+            const incidentMonth = months[Math.floor(Math.random() * months.length)]
+            const incidentYear = 2023 + Math.floor(Math.random() * 2) // 2023-2024
+
+            const descriptions = {
+              Maintenance: [
+                "Water leak in bathroom requiring plumbing repair",
+                "HVAC system failure requiring technician",
+                "Electrical wiring issue in kitchen",
+                "Roof damage from recent storm",
+                "Broken window replacement needed",
+              ],
+              Noise: [
+                "Complaint from neighbors about loud music",
+                "Construction noise during quiet hours",
+                "Late night party disturbance",
+                "Barking dog complaint from neighbors",
+                "Loud arguments reported by adjacent residents",
+              ],
+              Construction: [
+                "Unauthorized home extension construction",
+                "Permit violation for backyard structure",
+                "Construction debris not properly disposed",
+                "Workers starting before allowed hours",
+                "Damage to common area during material delivery",
+              ],
+              Other: [
+                "Parking dispute with neighbors",
+                "Unauthorized landscape modification",
+                "Trash bins left out for extended period",
+                "Pet waste not cleaned up in common area",
+                "Unauthorized use of neighbor's utilities",
+              ],
+            }
+
+            const descriptionArray = descriptions[incidentType]
+            const description = descriptionArray[Math.floor(Math.random() * descriptionArray.length)]
+
+            return {
+              type: incidentType,
+              description,
+              date: `${incidentMonth} ${day}, ${incidentYear}`,
+            }
+          }),
+        }
+      }),
     },
-  },
-]
-
-// Circle data
-export interface CircleData {
-  id: string
-  center: [number, number]
-  radius: number
-  name: string
-  type: string
-}
-
-export const circleData: CircleData[] = [
-  {
-    id: "circle1",
-    center: [10.2495, 123.7885],
-    radius: 50,
-    name: "Community Center",
-    type: "Public Facility",
-  },
-  {
-    id: "circle2",
-    center: [10.2488, 123.7892],
-    radius: 30,
-    name: "Playground",
-    type: "Recreation Area",
   },
 ]
 

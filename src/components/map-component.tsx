@@ -1,7 +1,9 @@
+"use client"
+
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { MapContainer, TileLayer, useMap, useMapEvents, Circle, Polygon, Marker } from "react-leaflet"
+import { MapContainer, TileLayer, useMap, useMapEvents, Polygon, Marker } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,13 +21,12 @@ import {
   INITIAL_ZOOM,
   securityEntrances,
   polygonData,
-  circleData,
   type StatusType,
   type HouseProperties,
   type PinProperties,
   type SecurityEntrance,
   type PolygonData,
-  type CircleData,
+  getStatusColor,
 } from "./subdivision-data"
 
 const MapInitializer = () => {
@@ -40,14 +41,10 @@ const MapInitializer = () => {
   return null
 }
 
-const CoordinatesDisplay = () => {
-  const [position, ] = useState<{ lat: number; lng: number }>({ lat: 0, lng: 0 })
-
-  const map = useMap()
-
+const GIDDisplay = () => {
   return (
     <div className="absolute top-0 left-0 right-0 z-[1000] bg-background/80 backdrop-blur-sm text-xs p-2 flex justify-center">
-      Latitude: {position.lat.toFixed(6)} | Longitude: {position.lng.toFixed(6)} | Zoom: {map.getZoom()}
+      GID - 1001
     </div>
   )
 }
@@ -57,10 +54,14 @@ const getStatusVariant = (status: StatusType): "default" | "secondary" | "destru
   switch (status) {
     case "Occupied":
       return "default"
+    case "Unoccupied":
+      return "default" // Same as Occupied (green)
     case "Under Renovation":
+      return "destructive"
     case "Under Construction":
       return "destructive"
     case "Upcoming Renovation":
+      return "secondary"
     case "Upcoming Construction":
       return "secondary"
     default:
@@ -110,6 +111,7 @@ const HouseCard = ({
       </div>
       <div className="mt-3 text-sm">
         <div className="flex items-center gap-1 mb-2">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getStatusColor(house.status.type) }}></div>
           <Badge variant={getStatusVariant(house.status.type)}>{house.status.type}</Badge>
           <span className="text-xs text-muted-foreground ml-2">{house.status.date}</span>
         </div>
@@ -164,12 +166,10 @@ const createSecurityIcon = () => {
 
 export default function MapViewer() {
   const [polygons] = useState(polygonData)
-  const [circles] = useState(circleData)
 
   const [selectedPin, setSelectedPin] = useState<PinProperties | null>(null)
   const [selectedHouse, setSelectedHouse] = useState<HouseProperties | null>(null)
   const [selectedPolygon, setSelectedPolygon] = useState<PolygonData | null>(null)
-  const [selectedCircle, setSelectedCircle] = useState<CircleData | null>(null)
   const [selectedEntrance, setSelectedEntrance] = useState<SecurityEntrance | null>(null)
 
   const [activeTab, setActiveTab] = useState("overview")
@@ -222,7 +222,6 @@ export default function MapViewer() {
     setSelectedPolygon(null)
     setSelectedPin(null)
     setSelectedHouse(null)
-    setSelectedCircle(null)
     setShowFullDetails(false)
     setIsModalOpen(true)
   }
@@ -233,7 +232,6 @@ export default function MapViewer() {
     setSelectedPin(null)
     setSelectedHouse(null)
     setSelectedPolygon(null)
-    setSelectedCircle(null)
     setSelectedEntrance(null)
     setShowFullDetails(false)
   }
@@ -299,7 +297,7 @@ export default function MapViewer() {
             }}
           >
             <MapInitializer />
-            <CoordinatesDisplay />
+            <GIDDisplay />
             <MapEventHandler />
 
             <TileLayer
@@ -382,23 +380,6 @@ export default function MapViewer() {
                   }}
                 />
               ))}
-
-            {/* Render circles */}
-            {showLayers.circles &&
-              circles.map((circle) => (
-                <Circle
-                  key={circle.id}
-                  center={circle.center}
-                  radius={circle.radius}
-                  pathOptions={{ color: "green", fillOpacity: 0.2 }}
-                  eventHandlers={{
-                    click: () => {
-                      setSelectedCircle(circle)
-                      setIsModalOpen(true)
-                    },
-                  }}
-                />
-              ))}
           </MapContainer>
         )}
       </div>
@@ -431,7 +412,7 @@ export default function MapViewer() {
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="px-6 overflow-y-auto flex-1">
+                <div className="px-6 overflow-y-auto flex-1 max-h-[calc(90vh-180px)]">
                   {selectedHouse ? (
                     <div className="py-4 space-y-4">
                       <div className="grid grid-cols-2 gap-3">
@@ -455,6 +436,10 @@ export default function MapViewer() {
                           <div className="space-y-3">
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: getStatusColor(selectedHouse.status.type) }}
+                                ></div>
                                 <span>Current Status</span>
                               </div>
                               <Badge variant={getStatusVariant(selectedHouse.status.type)}>
@@ -592,7 +577,7 @@ export default function MapViewer() {
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="px-6 overflow-y-auto flex-1">
+                <div className="px-6 overflow-y-auto flex-1 max-h-[calc(90vh-180px)]">
                   {selectedHouse ? (
                     <div className="py-4 space-y-4">
                       <div className="grid grid-cols-2 gap-3">
@@ -616,6 +601,10 @@ export default function MapViewer() {
                           <div className="space-y-3">
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: getStatusColor(selectedHouse.status.type) }}
+                                ></div>
                                 <span>Current Status</span>
                               </div>
                               <Badge variant={getStatusVariant(selectedHouse.status.type)}>
@@ -749,11 +738,7 @@ export default function MapViewer() {
                         at {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => (window.location.href = "/")}
-                      className="flex items-center gap-1"
-                    >
+                    <Button size="sm" onClick={() => (window.location.href = "/")} className="flex items-center gap-1">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -963,48 +948,6 @@ export default function MapViewer() {
                 </div>
 
                 <CardFooter className="border-t p-4 mt-auto flex-shrink-0">
-                  <Button variant="outline" className="w-full" onClick={closeModal}>
-                    Close
-                  </Button>
-                </CardFooter>
-              </motion.div>
-            )}
-
-            {selectedCircle && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="h-full flex flex-col"
-              >
-                <DialogHeader className="px-6 pt-6 pb-2">
-                  <DialogTitle className="text-xl">{selectedCircle.name}</DialogTitle>
-                  <DialogDescription>{selectedCircle.type}</DialogDescription>
-                </DialogHeader>
-
-                <div className="px-6 py-4 overflow-y-auto flex-1">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Area Information</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Radius:</span>
-                          <Badge variant="outline">{selectedCircle.radius} meters</Badge>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm">Center:</span>
-                          <Badge variant="outline">
-                            {selectedCircle.center[0].toFixed(6)}, {selectedCircle.center[1].toFixed(6)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <CardFooter className="border-t p-4 mt-auto">
                   <Button variant="outline" className="w-full" onClick={closeModal}>
                     Close
                   </Button>
