@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
@@ -164,6 +162,115 @@ const createSecurityIcon = () => {
   })
 }
 
+// Update the createPinIcon function to create a more standard map pin with hover effects
+const createPinIcon = () => {
+  return L.divIcon({
+    html: `<div class="map-pin">
+            <div class="pin-head"></div>
+            <div class="pin-tail"></div>
+            <div class="pin-shadow"></div>
+          </div>`,
+    className: "custom-pin-icon",
+    iconSize: [30, 42],
+    iconAnchor: [15, 42],
+  })
+}
+
+// Update the customPins array to include more details for each pin
+const customPins: { id: string; position: [number, number]; label: string; details: string }[] = [
+  { id: "pin1", position: [10.2492, 123.787519], label: "Location A", details: "Residential area with 5 households" },
+  { id: "pin2", position: [10.249231, 123.787562], label: "Location B", details: "Commercial building, 2 floors" },
+  { id: "pin3", position: [10.249416, 123.787444], label: "Location C", details: "Park entrance, north side" },
+  { id: "pin4", position: [10.249432, 123.787497], label: "Location D", details: "Community center" },
+  { id: "pin5", position: [10.249611, 123.787406], label: "Location E", details: "School zone" },
+  { id: "pin6", position: [10.249659, 123.787449], label: "Location F", details: "Playground area" },
+  { id: "pin7", position: [10.249796, 123.787369], label: "Location G", details: "Shopping center" },
+  { id: "pin8", position: [10.249801, 123.787411], label: "Location H", details: "Parking lot" },
+  { id: "pin9", position: [10.249965, 123.787315], label: "Location I", details: "Bus stop" },
+  { id: "pin10", position: [10.249981, 123.787363], label: "Location J", details: "Restaurant row" },
+]
+
+// Custom component to handle pin hover effects
+const CustomPinMarker = ({ pin }: { pin: (typeof customPins)[0] }) => {
+  const markerRef = useRef<L.Marker>(null)
+  const map = useMap()
+
+  const handleMouseOver = (e: L.LeafletMouseEvent) => {
+    const markerElement = e.target.getElement()
+    if (markerElement) {
+      // Create popup content dynamically
+      const popupContent = document.createElement("div")
+      popupContent.className = "pin-popup"
+      popupContent.innerHTML = `
+        <div class="font-medium text-sm">${pin.label}</div>
+        <div class="text-xs text-muted-foreground mt-1">${pin.details}</div>
+        <div class="text-xs mt-2">
+          <span class="font-medium">Coordinates:</span><br/>
+          [${pin.position[0].toFixed(6)}, ${pin.position[1].toFixed(6)}]
+        </div>
+      `
+
+      // Add popup to marker element
+      const pinElement = markerElement.querySelector(".map-pin")
+      if (pinElement && !pinElement.querySelector(".pin-popup")) {
+        pinElement.appendChild(popupContent)
+      }
+    }
+  }
+
+  const handleClick = () => {
+    if (markerRef.current && map) {
+      // Create a popup at the pin location with more details
+      L.popup()
+        .setLatLng(pin.position)
+        .setContent(`
+          <div class="p-3">
+            <h3 class="font-bold text-primary">${pin.label}</h3>
+            <p class="mt-2 text-sm">${pin.details}</p>
+            <p class="mt-2 text-xs">
+              <span class="font-medium">Coordinates:</span><br/>
+              [${pin.position[0].toFixed(6)}, ${pin.position[1].toFixed(6)}]
+            </p>
+            <button 
+              class="mt-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 py-2"
+              onclick="document.getElementById('view-pin-details-${pin.id}').click()"
+            >
+              View Details
+            </button>
+            <button id="view-pin-details-${pin.id}" style="display:none;"></button>
+          </div>
+        `)
+        .openOn(map)
+
+      // Add event listener to the hidden button
+      setTimeout(() => {
+        const button = document.getElementById(`view-pin-details-${pin.id}`)
+        if (button) {
+          button.addEventListener("click", () => {
+            // You can add more detailed view here if needed
+            toast.success(`Viewing details for ${pin.label}`, {
+              description: "Full details view would open here.",
+              duration: 3000,
+            })
+          })
+        }
+      }, 0)
+    }
+  }
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={pin.position}
+      icon={createPinIcon()}
+      eventHandlers={{
+        mouseover: handleMouseOver,
+        click: handleClick,
+      }}
+    />
+  )
+}
+
 export default function MapViewer() {
   const [polygons] = useState(polygonData)
 
@@ -174,7 +281,7 @@ export default function MapViewer() {
 
   const [activeTab, setActiveTab] = useState("overview")
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [, setIsMobile] = useState<boolean>(false)
+  const [isMobile, setIsMobile] = useState<boolean>(false)
 
   // Add a state for expanded details view
   const [showFullDetails, setShowFullDetails] = useState(false)
@@ -184,11 +291,14 @@ export default function MapViewer() {
     polygons: true,
     circles: false,
     securityEntrances: true,
+    pins: true,
   })
 
   const mapRef = useRef<L.Map | null>(null)
 
   useEffect(() => {
+    let style: HTMLStyleElement | null = null
+
     if (typeof window !== "undefined") {
       setIsMobile(window.innerWidth < 768)
 
@@ -197,8 +307,90 @@ export default function MapViewer() {
       }
 
       window.addEventListener("resize", handleResize)
-      return () => window.removeEventListener("resize", handleResize)
+
+      // Add custom CSS for the map pins
+      style = document.createElement("style")
+      style.textContent = `
+        .custom-pin-icon {
+          contain: layout;
+          z-index: 500;
+        }
+        
+        .map-pin {
+          position: relative;
+          transition: transform 0.3s ease, z-index 0.01s;
+          z-index: 500;
+        }
+        
+        .map-pin:hover {
+          transform: scale(1.5);
+          z-index: 1000;
+        }
+        
+        .pin-head {
+          width: 20px;
+          height: 20px;
+          background-color: #ef4444;
+          border: 2px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+          position: absolute;
+          top: 0;
+          left: 5px;
+        }
+        
+        .pin-tail {
+          width: 2px;
+          height: 20px;
+          background: linear-gradient(to bottom, #ef4444, transparent);
+          position: absolute;
+          top: 18px;
+          left: 14px;
+        }
+        
+        .pin-shadow {
+          width: 14px;
+          height: 3px;
+          background: rgba(0,0,0,0.2);
+          border-radius: 50%;
+          position: absolute;
+          bottom: 0;
+          left: 8px;
+          filter: blur(1px);
+        }
+        
+        .pin-popup {
+          position: absolute;
+          bottom: 45px;
+          left: -70px;
+          width: 160px;
+          background-color: white;
+          border-radius: 8px;
+          padding: 8px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+          opacity: 0;
+          transform: translateY(10px);
+          transition: opacity 0.3s ease, transform 0.3s ease;
+          pointer-events: none;
+          z-index: 1001;
+        }
+        
+        .map-pin:hover .pin-popup {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      `
+      document.head.appendChild(style)
+
+      return () => {
+        window.removeEventListener("resize", handleResize)
+        if (style) {
+          document.head.removeChild(style)
+        }
+      }
     }
+
+    return () => {}
   }, [])
 
   // Handle house click
@@ -319,6 +511,9 @@ export default function MapViewer() {
                   }}
                 />
               ))}
+
+            {/* Render custom pins - FIXED: Now properly included in the JSX */}
+            {showLayers.pins && customPins.map((pin) => <CustomPinMarker key={pin.id} pin={pin} />)}
 
             {/* Render polygons */}
             {showLayers.polygons &&
