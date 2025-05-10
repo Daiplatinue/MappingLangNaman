@@ -6,10 +6,17 @@ import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Users, Home, Calendar, Info, LayoutGrid, ChevronLeft, Shield, Clock } from "lucide-react"
+import { Building2, Users, Home, Calendar, Info, LayoutGrid, ChevronLeft, Shield, Clock, MapPin } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -19,11 +26,14 @@ import {
   INITIAL_ZOOM,
   securityEntrances,
   polygonData,
+  customPins,
+  defaultPinColors,
   type StatusType,
   type HouseProperties,
   type PinProperties,
   type SecurityEntrance,
   type PolygonData,
+  type ResidenceData,
   getStatusColor,
 } from "./subdivision-data"
 
@@ -162,12 +172,14 @@ const createSecurityIcon = () => {
   })
 }
 
-// Update the createPinIcon function to create a more standard map pin with hover effects
-const createPinIcon = () => {
+// Update the createPinIcon function to accept a color parameter
+const createPinIcon = (color?: string) => {
+  const pinColor = color || "#3B82F6" // Default to blue if no color provided
+
   return L.divIcon({
     html: `<div class="map-pin">
-            <div class="pin-head"></div>
-            <div class="pin-tail"></div>
+            <div class="pin-head" style="background-color: ${pinColor};"></div>
+            <div class="pin-tail" style="background: linear-gradient(to bottom, ${pinColor}, transparent);"></div>
             <div class="pin-shadow"></div>
           </div>`,
     className: "custom-pin-icon",
@@ -176,37 +188,27 @@ const createPinIcon = () => {
   })
 }
 
-// Update the customPins array to include more details for each pin
-const customPins: { id: string; position: [number, number]; label: string; details: string }[] = [
-  { id: "pin1", position: [10.2492, 123.787519], label: "Location A", details: "Residential area with 5 households" },
-  { id: "pin2", position: [10.249231, 123.787562], label: "Location B", details: "Commercial building, 2 floors" },
-  { id: "pin3", position: [10.249416, 123.787444], label: "Location C", details: "Park entrance, north side" },
-  { id: "pin4", position: [10.249432, 123.787497], label: "Location D", details: "Community center" },
-  { id: "pin5", position: [10.249611, 123.787406], label: "Location E", details: "School zone" },
-  { id: "pin6", position: [10.249659, 123.787449], label: "Location F", details: "Playground area" },
-  { id: "pin7", position: [10.249796, 123.787369], label: "Location G", details: "Shopping center" },
-  { id: "pin8", position: [10.249801, 123.787411], label: "Location H", details: "Parking lot" },
-  { id: "pin9", position: [10.249965, 123.787315], label: "Location I", details: "Bus stop" },
-  { id: "pin10", position: [10.249981, 123.787363], label: "Location J", details: "Restaurant row" },
-]
-
-// Custom component to handle pin hover effects
-const CustomPinMarker = ({ pin }: { pin: (typeof customPins)[0] }) => {
+// Update the CustomPinMarker component to improve the hover popup design
+const CustomPinMarker = ({ pin }: { pin: ResidenceData }) => {
   const markerRef = useRef<L.Marker>(null)
   const map = useMap()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const handleMouseOver = (e: L.LeafletMouseEvent) => {
     const markerElement = e.target.getElement()
     if (markerElement) {
-      // Create popup content dynamically
+      // Create popup content dynamically with improved styling
       const popupContent = document.createElement("div")
       popupContent.className = "pin-popup"
       popupContent.innerHTML = `
-        <div class="font-medium text-sm">${pin.label}</div>
-        <div class="text-xs text-muted-foreground mt-1">${pin.details}</div>
-        <div class="text-xs mt-2">
-          <span class="font-medium">Coordinates:</span><br/>
-          [${pin.position[0].toFixed(6)}, ${pin.position[1].toFixed(6)}]
+        <div class="pin-popup-content">
+          <h4 class="pin-popup-title">${pin.name}</h4>
+          <div class="pin-popup-occupants">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="pin-popup-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>${pin.occupants} ${pin.occupants === 1 ? "Occupant" : "Occupants"}</span>
+          </div>
+          <p class="pin-popup-description">${pin.description.length > 80 ? pin.description.substring(0, 80) + "..." : pin.description}</p>
+          <div class="pin-popup-footer">Click for more details</div>
         </div>
       `
 
@@ -219,58 +221,123 @@ const CustomPinMarker = ({ pin }: { pin: (typeof customPins)[0] }) => {
   }
 
   const handleClick = () => {
-    if (markerRef.current && map) {
-      // Create a popup at the pin location with more details
-      L.popup()
-        .setLatLng(pin.position)
-        .setContent(`
-          <div class="p-3">
-            <h3 class="font-bold text-primary">${pin.label}</h3>
-            <p class="mt-2 text-sm">${pin.details}</p>
-            <p class="mt-2 text-xs">
-              <span class="font-medium">Coordinates:</span><br/>
-              [${pin.position[0].toFixed(6)}, ${pin.position[1].toFixed(6)}]
-            </p>
-            <button 
-              class="mt-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 py-2"
-              onclick="document.getElementById('view-pin-details-${pin.id}').click()"
-            >
-              View Details
-            </button>
-            <button id="view-pin-details-${pin.id}" style="display:none;"></button>
-          </div>
-        `)
-        .openOn(map)
-
-      // Add event listener to the hidden button
-      setTimeout(() => {
-        const button = document.getElementById(`view-pin-details-${pin.id}`)
-        if (button) {
-          button.addEventListener("click", () => {
-            // You can add more detailed view here if needed
-            toast.success(`Viewing details for ${pin.label}`, {
-              description: "Full details view would open here.",
-              duration: 3000,
-            })
-          })
-        }
-      }, 0)
-    }
+    setIsDialogOpen(true)
   }
 
   return (
-    <Marker
-      ref={markerRef}
-      position={pin.position}
-      icon={createPinIcon()}
-      eventHandlers={{
-        mouseover: handleMouseOver,
-        click: handleClick,
-      }}
-    />
+    <>
+      <Marker
+        ref={markerRef}
+        position={pin.position}
+        icon={createPinIcon(pin.color)}
+        eventHandlers={{
+          mouseover: handleMouseOver,
+          click: handleClick,
+        }}
+      />
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">{pin.name}</DialogTitle>
+            <DialogDescription className="text-sm opacity-90 mt-1">{pin.description}</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="flex items-center justify-between mb-4 bg-muted/50 p-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                <span className="text-sm font-medium">Occupants:</span>
+              </div>
+              <Badge className="ml-auto text-sm px-3 py-1">{pin.occupants}</Badge>
+            </div>
+            <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                <span className="text-sm font-medium">Location:</span>
+              </div>
+              <span className="text-xs text-muted-foreground ml-2 font-mono">
+                [{pin.position[0].toFixed(6)}, {pin.position[1].toFixed(6)}]
+              </span>
+            </div>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full">
+              Close
+            </Button>
+            <Button
+              className="w-full"
+              onClick={() => {
+                toast.success(`Contacting ${pin.name}`, {
+                  description: "This would connect you with the residents.",
+                })
+                setIsDialogOpen(false)
+              }}
+            >
+              Contact Residents
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
+// Add a color picker component for pin customization
+const PinColorPicker = () => {
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedColor, setSelectedColor] = useState(defaultPinColors[0])
+
+  const handleColorChange = (color: string) => {
+    // Find all pins without a custom color
+    const pinsToUpdate = customPins.filter((pin) => !pin.color)
+
+    // Update their colors
+    pinsToUpdate.forEach((pin) => {
+      pin.color = color
+    })
+
+    setSelectedColor(color)
+    setIsOpen(false)
+
+    toast.success("Pin colors updated!", {
+      description: "All default pins have been updated with the new color.",
+      duration: 3000,
+    })
+  }
+
+  return (
+    <div className="absolute bottom-4 right-4 z-[1000]">
+      <Button variant="outline" className="bg-background/80 backdrop-blur-sm" onClick={() => setIsOpen(!isOpen)}>
+        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: selectedColor }}></div>
+        Customize Pins
+      </Button>
+
+      {isOpen && (
+        <Card className="absolute bottom-12 right-0 w-64 p-2">
+          <CardHeader className="p-2">
+            <CardTitle className="text-sm">Choose Pin Color</CardTitle>
+          </CardHeader>
+          <CardContent className="p-2">
+            <div className="grid grid-cols-4 gap-2">
+              {defaultPinColors.map((color, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  className="w-full h-8 p-0"
+                  onClick={() => handleColorChange(color)}
+                >
+                  <div className="w-full h-full rounded-sm" style={{ backgroundColor: color }}></div>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// Update the MapViewer component to include the PinColorPicker
 export default function MapViewer() {
   const [polygons] = useState(polygonData)
 
@@ -281,7 +348,7 @@ export default function MapViewer() {
 
   const [activeTab, setActiveTab] = useState("overview")
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState<boolean>(false)
+  const [, setIsMobile] = useState<boolean>(false)
 
   // Add a state for expanded details view
   const [showFullDetails, setShowFullDetails] = useState(false)
@@ -311,75 +378,115 @@ export default function MapViewer() {
       // Add custom CSS for the map pins
       style = document.createElement("style")
       style.textContent = `
-        .custom-pin-icon {
-          contain: layout;
-          z-index: 500;
-        }
-        
-        .map-pin {
-          position: relative;
-          transition: transform 0.3s ease, z-index 0.01s;
-          z-index: 500;
-        }
-        
-        .map-pin:hover {
-          transform: scale(1.5);
-          z-index: 1000;
-        }
-        
-        .pin-head {
-          width: 20px;
-          height: 20px;
-          background-color: #ef4444;
-          border: 2px solid white;
-          border-radius: 50%;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-          position: absolute;
-          top: 0;
-          left: 5px;
-        }
-        
-        .pin-tail {
-          width: 2px;
-          height: 20px;
-          background: linear-gradient(to bottom, #ef4444, transparent);
-          position: absolute;
-          top: 18px;
-          left: 14px;
-        }
-        
-        .pin-shadow {
-          width: 14px;
-          height: 3px;
-          background: rgba(0,0,0,0.2);
-          border-radius: 50%;
-          position: absolute;
-          bottom: 0;
-          left: 8px;
-          filter: blur(1px);
-        }
-        
-        .pin-popup {
-          position: absolute;
-          bottom: 45px;
-          left: -70px;
-          width: 160px;
-          background-color: white;
-          border-radius: 8px;
-          padding: 8px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-          opacity: 0;
-          transform: translateY(10px);
-          transition: opacity 0.3s ease, transform 0.3s ease;
-          pointer-events: none;
-          z-index: 1001;
-        }
-        
-        .map-pin:hover .pin-popup {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `
+  .custom-pin-icon {
+    contain: layout;
+    z-index: 500;
+  }
+  
+  .map-pin {
+    position: relative;
+    transition: transform 0.3s ease, z-index 0.01s;
+    z-index: 500;
+  }
+  
+  .map-pin:hover {
+    transform: scale(1.5);
+    z-index: 1000;
+  }
+  
+  .pin-head {
+    width: 20px;
+    height: 20px;
+    background-color: #3B82F6; /* Changed to blue-500 */
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    position: absolute;
+    top: 0;
+    left: 5px;
+  }
+  
+  .pin-tail {
+    width: 2px;
+    height: 20px;
+    background: linear-gradient(to bottom, #3B82F6, transparent); /* Changed to blue-500 */
+    position: absolute;
+    top: 18px;
+    left: 14px;
+  }
+  
+  .pin-shadow {
+    width: 14px;
+    height: 3px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 50%;
+    position: absolute;
+    bottom: 0;
+    left: 8px;
+    filter: blur(1px);
+  }
+  
+  .pin-popup {
+    position: absolute;
+    bottom: 45px;
+    left: -100px;
+    width: 220px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    z-index: 1001;
+    overflow: hidden;
+  }
+  
+  .pin-popup-content {
+    padding: 10px;
+  }
+  
+  .pin-popup-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    color: #1e293b;
+  }
+  
+  .pin-popup-occupants {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+  
+  .pin-popup-icon {
+    opacity: 0.7;
+  }
+  
+  .pin-popup-description {
+    font-size: 11px;
+    line-height: 1.4;
+    margin: 0 0 6px 0;
+    color: #475569;
+  }
+  
+  .pin-popup-footer {
+    font-size: 10px;
+    text-align: center;
+    background-color: #f1f5f9;
+    padding: 4px;
+    color: #64748b;
+    font-weight: 500;
+  }
+  
+  .map-pin:hover .pin-popup {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`
       document.head.appendChild(style)
 
       return () => {
@@ -491,6 +598,7 @@ export default function MapViewer() {
             <MapInitializer />
             <GIDDisplay />
             <MapEventHandler />
+            <PinColorPicker />
 
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -512,7 +620,7 @@ export default function MapViewer() {
                 />
               ))}
 
-            {/* Render custom pins - FIXED: Now properly included in the JSX */}
+            {/* Render custom pins - Updated to use the imported customPins */}
             {showLayers.pins && customPins.map((pin) => <CustomPinMarker key={pin.id} pin={pin} />)}
 
             {/* Render polygons */}

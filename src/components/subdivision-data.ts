@@ -72,6 +72,16 @@ export interface SecurityEntrance {
   guards: GuardAssignment[]
 }
 
+// Add the ResidenceData interface after the SecurityEntrance interface
+export interface ResidenceData {
+  id: string
+  position: [number, number]
+  name: string
+  description: string
+  occupants: number
+  color?: string
+}
+
 // Security entrance points data
 export const securityEntrances: SecurityEntrance[] = [
   {
@@ -167,6 +177,486 @@ export const securityEntrances: SecurityEntrance[] = [
       },
     ],
   },
+]
+
+// Add the customPins array after the securityEntrances array
+export const customPins: ResidenceData[] = [
+  {
+    id: "res001",
+    position: [10.2492, 123.787546],
+    name: "Johnson Residence",
+    description:
+      "A family of 4 that moved in early 2023. They're known for their beautiful garden and community involvement.",
+    occupants: 4,
+  },
+  {
+    id: "res002",
+    position: [10.24949, 123.787481],
+    name: "Williams Residence",
+    description:
+      "A wealthy family of 5 that relocated from the city center in 2022. They host regular neighborhood gatherings.",
+    occupants: 5,
+  },
+  {
+    id: "res003",
+    position: [10.249738, 123.787411],
+    name: "Chen Residence",
+    description:
+      "A young professional couple with their child who moved in mid-2024. They both work in tech and often work from home.",
+    occupants: 3,
+  },
+  {
+    id: "res004",
+    position: [10.249997, 123.787336],
+    name: "Garcia Residence",
+    description:
+      "A retired couple who moved in 2021. They spend most of their time tending to their award-winning flower garden.",
+    occupants: 2,
+  },
+  {
+    id: "res005",
+    position: [10.24977, 123.787621],
+    name: "Thompson Residence",
+    description:
+      "A well-established family of 6 that has lived here since 2019. Mr. Thompson is a local business owner.",
+    occupants: 6,
+  },
+  {
+    id: "res006",
+    position: [10.249263, 123.787749],
+    name: "Patel Residence",
+    description:
+      "A family of 4 that moved in 2022. Dr. Patel works at the local hospital and is known for hosting cultural events.",
+    occupants: 4,
+  },
+  {
+    id: "res007",
+    position: [10.249516, 123.787685],
+    name: "Rodriguez Residence",
+    description:
+      "A family of 3 that relocated here in 2023. They run a popular catering business from their custom-built kitchen.",
+    occupants: 3,
+  },
+  {
+    id: "res008",
+    position: [10.250023, 123.787551],
+    name: "Kim Residence",
+    description:
+      "A family of 5 that moved in 2020. They're known for their beautiful landscaping and annual holiday decorations.",
+    occupants: 5,
+  },
+  {
+    id: "res009",
+    position: [10.249997, 123.788329],
+    name: "Taylor Residence",
+    description:
+      "A family of 4 that built this custom home in 2021. Mr. Taylor is a local architect who designed several homes in the area.",
+    occupants: 4,
+  },
+  {
+    id: "res010",
+    position: [10.250048, 123.788477],
+    name: "Nguyen Residence",
+    description:
+      "A young couple who moved in 2023. They're both environmental scientists and have implemented many eco-friendly features.",
+    occupants: 2,
+  },
+  {
+    id: "res011",
+    position: [10.250086, 123.788618],
+    name: "Wilson Residence",
+    description:
+      "A family of 3 that moved in 2022. They relocated from overseas and have brought unique cultural elements to their home.",
+    occupants: 3,
+  },
+  {
+    id: "res012",
+    position: [10.250138, 123.788756],
+    name: "Martinez Residence",
+    description:
+      "A large family of 5 that has lived here since 2020. They're active in the community and organize the annual block party.",
+    occupants: 5,
+  },
+  {
+    id: "res013",
+    position: [10.250176, 123.788881],
+    name: "Anderson Residence",
+    description:
+      "A wealthy family of 6 that built this luxury home in 2021. Mr. Anderson is a retired executive who collects vintage cars.",
+    occupants: 6,
+  },
+  {
+    id: "res014",
+    position: [10.249807, 123.788447],
+    name: "Singh Residence",
+    description:
+      "A family of 4 that moved in 2022. They maintain a beautiful tropical garden and often share produce with neighbors.",
+    occupants: 4,
+  },
+  {
+    id: "res015",
+    position: [10.249701, 123.788549],
+    name: "Brown Residence",
+    description:
+      "A family of 3 that relocated here in 2023. They're known for their artistic talents and host community art workshops.",
+    occupants: 3,
+  },
+  {
+    id: "res016",
+    position: [10.24959, 123.78864],
+    name: "Lee Residence",
+    description:
+      "A retired couple who moved in 2021. They've transformed their garden into a peaceful retreat that neighbors admire.",
+    occupants: 2,
+  },
+  {
+    id: "res017",
+    position: [10.249458, 123.788747],
+    name: "Davis Residence",
+    description:
+      "A family of 4 that built this modern home in 2022. Both parents work in finance and commute to the city center.",
+    occupants: 4,
+  },
+  {
+    id: "res018",
+    position: [10.249353, 123.788854],
+    name: "Gonzalez Residence",
+    description:
+      "A large family of 5 that moved in 2020. They're known for their weekend barbecues and welcoming nature.",
+    occupants: 5,
+  },
+  {
+    id: "res019",
+    position: [10.249896, 123.788731],
+    name: "Miller Residence",
+    description:
+      "A family of 4 that relocated here in 2021. Dr. Miller works at the university and often hosts student gatherings.",
+    occupants: 4,
+  },
+  {
+    id: "res020",
+    position: [10.249796, 123.788828],
+    name: "Wong Residence",
+    description:
+      "A family of 3 that moved in 2022. They run a successful online business and have a state-of-the-art home office.",
+    occupants: 3,
+  },
+  {
+    id: "res021",
+    position: [10.24969, 123.788924],
+    name: "Jackson Residence",
+    description:
+      "A family of 5 that has lived here since 2019. They're active in local sports and have a backyard basketball court.",
+    occupants: 5,
+  },
+  {
+    id: "res022",
+    position: [10.249595, 123.789021],
+    name: "White Residence",
+    description:
+      "A family of 4 that built this home in 2021. They're known for their beautiful water features and koi pond.",
+    occupants: 4,
+  },
+  {
+    id: "res023",
+    position: [10.24949, 123.789107],
+    name: "Lopez Residence",
+    description:
+      "A family of 3 that moved in 2022. They're passionate about cooking and often share their culinary creations with neighbors.",
+    occupants: 3,
+  },
+  {
+    id: "res024",
+    position: [10.249933, 123.78901],
+    name: "Harris Residence",
+    description:
+      "A wealthy family of 6 that renovated this historic property in 2020. They've maintained its original charm while adding modern amenities.",
+    occupants: 6,
+  },
+  {
+    id: "res025",
+    position: [10.249844, 123.789117],
+    name: "Clark Residence",
+    description:
+      "A family of 4 that moved in 2021. They're known for their beautiful holiday decorations that attract visitors from other neighborhoods.",
+    occupants: 4,
+  },
+  {
+    id: "res026",
+    position: [10.249738, 123.789209],
+    name: "Lewis Residence",
+    description:
+      "A family of 3 that relocated here in 2022. They've created a nature sanctuary in their backyard that attracts local wildlife.",
+    occupants: 3,
+  },
+  {
+    id: "res027",
+    position: [10.248471, 123.789262],
+    name: "Walker Residence",
+    description:
+      "A family of 4 that built this modern home in 2021. They're known for their minimalist design and clean aesthetic.",
+    occupants: 4,
+  },
+  {
+    id: "res028",
+    position: [10.248783, 123.789257],
+    name: "Hall Residence",
+    description:
+      "A wealthy family of 7 that moved in 2020. Mr. Hall is a successful entrepreneur who works from his custom home office.",
+    occupants: 7,
+  },
+  {
+    id: "res029",
+    position: [10.249036, 123.789268],
+    name: "Young Residence",
+    description:
+      "A family of 5 that relocated here in 2021. They're known for their beautiful rose garden that blooms year-round.",
+    occupants: 5,
+  },
+  {
+    id: "res030",
+    position: [10.2493, 123.789343],
+    name: "Allen Residence",
+    description:
+      "A large family of 6 that built this estate in 2019. They host an annual charity event in their spacious backyard.",
+    occupants: 6,
+  },
+  {
+    id: "res031",
+    position: [10.249537, 123.789439],
+    name: "Scott Residence",
+    description:
+      "A family of 4 that moved in 2022. Their home features a beautiful creek-side patio where they often entertain guests.",
+    occupants: 4,
+  },
+  {
+    id: "res032",
+    position: [10.248592, 123.788881],
+    name: "Green Residence",
+    description:
+      "A family of 3 that relocated here in 2021. They've incorporated many Asian-inspired elements in their home design.",
+    occupants: 3,
+  },
+  {
+    id: "res033",
+    position: [10.248577, 123.789015],
+    name: "Adams Residence",
+    description:
+      "A young professional couple who moved in 2023. They both work in tech and have transformed their apartment into a smart home.",
+    occupants: 2,
+  },
+  {
+    id: "res034",
+    position: [10.248408, 123.788865],
+    name: "Baker Residence",
+    description:
+      "A family of 5 that converted this historic building in 2020. They've preserved many original features while adding modern comforts.",
+    occupants: 5,
+  },
+  {
+    id: "res035",
+    position: [10.248418, 123.789021],
+    name: "Nelson Residence",
+    description:
+      "A family of 4 that moved in 2021. They're avid gardeners who have won several local landscaping awards.",
+    occupants: 4,
+  },
+  {
+    id: "res036",
+    position: [10.248487, 123.78953],
+    name: "Carter Residence",
+    description:
+      "A family of 3 that built this charming home in 2022. Mrs. Carter is an interior designer who often showcases her home in magazines.",
+    occupants: 3,
+  },
+  {
+    id: "res037",
+    position: [10.248809, 123.789514],
+    name: "Mitchell Residence",
+    description:
+      "A family of 4 that relocated here in 2021. They've created a tropical oasis with plants from their travels around the world.",
+    occupants: 4,
+  },
+  {
+    id: "res038",
+    position: [10.249073, 123.789563],
+    name: "Perez Residence",
+    description:
+      "A family of 5 that moved in 2020. Their secluded property features beautiful walking paths and a meditation garden.",
+    occupants: 5,
+  },
+  {
+    id: "res039",
+    position: [10.249258, 123.789632],
+    name: "Roberts Residence",
+    description:
+      "A family of 4 that built this modern farmhouse in 2022. They grow much of their own produce in their extensive vegetable garden.",
+    occupants: 4,
+  },
+  {
+    id: "res040",
+    position: [10.249437, 123.789691],
+    name: "Turner Residence",
+    description:
+      "A family of 3 that moved in 2021. Their property is known for its extensive gardens featuring plants from around the world.",
+    occupants: 3,
+  },
+  {
+    id: "res041",
+    position: [10.248207, 123.788887],
+    name: "Phillips Residence",
+    description:
+      "A family of 4 that relocated here in 2022. They maintain a traditional home with many heirloom furnishings.",
+    occupants: 4,
+  },
+  {
+    id: "res042",
+    position: [10.248218, 123.789053],
+    name: "Campbell Residence",
+    description:
+      "A family of 5 that built this lodge-style home in 2020. They're outdoor enthusiasts who lead the local hiking club.",
+    occupants: 5,
+  },
+  {
+    id: "res043",
+    position: [10.248228, 123.789214],
+    name: "Parker Residence",
+    description:
+      "A wealthy family of 6 that renovated this manor in 2021. They host an annual garden tour that raises funds for local charities.",
+    occupants: 6,
+  },
+  {
+    id: "res044",
+    position: [10.248223, 123.789391],
+    name: "Evans Residence",
+    description:
+      "A family of 4 that moved in 2022. They've created a Mediterranean-inspired retreat with an olive grove and herb garden.",
+    occupants: 4,
+  },
+  {
+    id: "res045",
+    position: [10.248228, 123.789541],
+    name: "Edwards Residence",
+    description:
+      "A family of 3 that built this modern home in 2021. The pavilion-style design maximizes indoor-outdoor living.",
+    occupants: 3,
+  },
+  {
+    id: "res046",
+    position: [10.248234, 123.789697],
+    name: "Collins Residence",
+    description:
+      "A family of 5 that relocated here in 2020. Their courtyard home features a central fountain and extensive seating areas.",
+    occupants: 5,
+  },
+  {
+    id: "res047",
+    position: [10.24949, 123.78802],
+    name: "Basketball Court",
+    description:
+      "A community basketball court that serves as a gathering place for residents. It's well-maintained and often busy.",
+    occupants: 4,
+  },
+  {
+    id: "res048",
+    position: [10.248904, 123.788951],
+    name: "Basketball Court",
+    description:
+      "A community basketball court that serves as a gathering place for residents. It's well-maintained and often busy.",
+    occupants: 5,
+  },
+  {
+    id: "res049",
+    position: [10.248492, 123.790416],
+    name: "Clinic",
+    description:
+      "A small community clinic that provides basic healthcare services. It's staffed by a friendly team of local doctors and nurses.",
+    occupants: 2,
+  },
+  {
+    id: "res050",
+    position: [10.248218, 123.790367],
+    name: "Summit Hall",
+    description:
+      "A community center that hosts events and activities for residents. It's a hub for social gatherings and local clubs.",
+    occupants: 3,
+  },
+  {
+    id: "res051",
+    position: [10.250218, 123.788093],
+    name: "Parking Lot",
+    description:
+      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    occupants: 3,
+  },
+  {
+    id: "res052",
+    position: [10.250271, 123.788307],
+    name: "Parking Lot",
+    description:
+      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    occupants: 3,
+  },
+  {
+    id: "res053",
+    position: [10.250329, 123.788506],
+    name: "Parking Lot",
+    description:
+      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    occupants: 3,
+  },
+  {
+    id: "res054",
+    position: [10.250424, 123.788699],
+    name: "Parking Lot",
+    description:
+      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    occupants: 3,
+  },
+  {
+    id: "res055",
+    position: [10.250408, 123.789305],
+    name: "Parking Lot",
+    description:
+      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    occupants: 3,
+  },
+  {
+    id: "res056",
+    position: [10.250118, 123.789364],
+    name: "Parking Lot",
+    description:
+      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    occupants: 3,
+  },
+  {
+    id: "res057",
+    position: [10.247917, 123.789198],
+    name: "Parking Lot",
+    description:
+      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    occupants: 3,
+  },
+  {
+    id: "res058",
+    position: [10.250155, 123.787894],
+    name: "Parking Lot",
+    description:
+      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    occupants: 3,
+  },
+]
+
+// Add a default pin colors array
+export const defaultPinColors = [
+  "#3B82F6", // blue
+  "#EF4444", // red
+  "#10B981", // green
+  "#F59E0B", // amber
+  "#8B5CF6", // purple
+  "#EC4899", // pink
+  "#06B6D4", // cyan
+  "#F97316", // orange
 ]
 
 export interface PolygonData {
@@ -891,7 +1381,6 @@ export const polygonData: PolygonData[] = [
                 "HVAC system failure requiring technician",
                 "Electrical wiring issue in kitchen",
                 "Roof damage from recent storm",
-                "Broken window replacement needed",
               ],
               Noise: [
                 "Complaint from neighbors about loud music",
@@ -1001,7 +1490,6 @@ export const polygonData: PolygonData[] = [
                 "HVAC system failure requiring technician",
                 "Electrical wiring issue in kitchen",
                 "Roof damage from recent storm",
-                "Broken window replacement needed",
               ],
               Noise: [
                 "Complaint from neighbors about loud music",
@@ -1107,7 +1595,6 @@ export const polygonData: PolygonData[] = [
                 "HVAC system failure requiring technician",
                 "Electrical wiring issue in kitchen",
                 "Roof damage from recent storm",
-                "Broken window replacement needed",
               ],
               Noise: [
                 "Complaint from neighbors about loud music",
@@ -1230,6 +1717,7 @@ export const polygonData: PolygonData[] = [
                 "Damage to common area during material delivery",
               ],
               Other: [
+                "Parking dispute with neighbors",
                 "Parking dispute with neighbors",
                 "Unauthorized landscape modification",
                 "Trash bins left out for extended period",
@@ -1531,7 +2019,6 @@ export const polygonData: PolygonData[] = [
                 "HVAC system failure requiring technician",
                 "Electrical wiring issue in kitchen",
                 "Roof damage from recent storm",
-                "Broken window replacement needed",
               ],
               Noise: [
                 "Complaint from neighbors about loud music",
