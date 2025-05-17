@@ -191,7 +191,6 @@ const createPinIcon = (color?: string) => {
 // Update the CustomPinMarker component to improve the hover popup design
 const CustomPinMarker = ({ pin }: { pin: ResidenceData }) => {
   const markerRef = useRef<L.Marker>(null)
-  const map = useMap()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const handleMouseOver = (e: L.LeafletMouseEvent) => {

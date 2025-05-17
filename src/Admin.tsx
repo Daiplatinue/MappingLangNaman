@@ -591,11 +591,6 @@ function AdminDashboard() {
     const oldHouseholdId = user.householdId
 
     try {
-      const userData = {
-        userId: userId,
-        block: blockId,
-        hid: householdId,
-      }
 
       // const response = await axios.post("http://localhost:3004/post/updateUserHousehold", userData)
 
@@ -726,7 +721,7 @@ function AdminDashboard() {
     u_status: string
   }
 
-  const [userDatas, setUserDatas] = useState<userDatas>({
+  const [userDatas] = useState<userDatas>({
     u_id: 0,
     u_firstname: "",
     u_lastname: "",
