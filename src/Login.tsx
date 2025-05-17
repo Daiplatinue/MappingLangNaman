@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button"
 import axios from "axios"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 function SignInForm({ onSwitchToRegister }: { onSwitchToRegister: () => void }) {
+  const navigate = useNavigate()
   const [values, setValues] = useState({
     email: "",
     password: "",
@@ -25,31 +27,23 @@ function SignInForm({ onSwitchToRegister }: { onSwitchToRegister: () => void }) 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault()
     setLoading(true)
-    setError("")
-    setStatusMessage("")
-
+    
     try {
-      const response = await axios.post("http://localhost:3004/auth/login", values)
-
-      if (response.status === 200) {
-        const userData = response.data.user
-        localStorage.setItem("user", JSON.stringify(userData))
-
-        // Navigate based on user type
-        window.location.href = userData.type === "guard" ? "/guard" : "/household-owner"
+      const response = await axios.post("http://localhost:3000/login", {
+        email: values.email.trim(),
+        password: values.password
+      })
+      
+      if (response.data) {
+        localStorage.setItem('user', JSON.stringify(response.data))
+        navigate("/household-owner")
       }
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response) {
-        if (err.response.status === 401) {
-          setError("Invalid email or password")
-        } else if (err.response.status === 404) {
-          setError("User not found")
-        } else {
-          setError(err.response.data.message || "Login failed")
-        }
+    } catch (error: any) {
+      console.error("Login error:", error)
+      if (error.response?.status === 400) {
+        setError(error.response.data.message || "Invalid credentials")
       } else {
-        setError("An unexpected error occurred")
-        console.error(err)
+        setError("Connection error. Please try again later.")
       }
     } finally {
       setLoading(false)
@@ -91,6 +85,7 @@ function SignInForm({ onSwitchToRegister }: { onSwitchToRegister: () => void }) 
             placeholder="Enter your email"
             className="h-12"
             onChange={handleChanges}
+            value={values.email}
             required
           />
         </div>
@@ -102,6 +97,7 @@ function SignInForm({ onSwitchToRegister }: { onSwitchToRegister: () => void }) 
             placeholder="Enter your password"
             className="h-12"
             onChange={handleChanges}
+            value={values.password}
             required
           />
         </div>
@@ -122,7 +118,17 @@ function SignInForm({ onSwitchToRegister }: { onSwitchToRegister: () => void }) 
         </div>
 
         <Button type="submit" className="h-12 w-full bg-blue-500 hover:bg-blue-600" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Signing in...
+            </span>
+          ) : (
+            "Sign in"
+          )}
         </Button>
 
         <div className="mt-4 text-center">
@@ -140,9 +146,10 @@ function SignInForm({ onSwitchToRegister }: { onSwitchToRegister: () => void }) 
 
 function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const [values, setValues] = useState({
-    firstName: "",
-    lastName: "",
+    firstname: "",
+    lastname: "",
     email: "",
+    contact: "",
     password: "",
     confirmPassword: "",
   })
@@ -156,33 +163,30 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault()
-
     if (values.password !== values.confirmPassword) {
       setError("Passwords do not match")
       return
     }
-
+    
     setLoading(true)
-    setError("")
-
     try {
-      const response = await axios.post("http://localhost:3004/auth/register", {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        password: values.password,
+      const response = await axios.post("http://localhost:3000/register", {
+        firstname: values.firstname.trim(),
+        lastname: values.lastname.trim(),
+        email: values.email.trim(),
+        contact: values.contact.trim(),
+        password: values.password
       })
-
-      if (response.status === 201) {
-        // Registration successful, switch to login
+      
+      if (response.data) {
         onSwitchToLogin()
       }
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response) {
-        setError(err.response.data.message || "Registration failed")
+    } catch (error: any) {
+      console.error("Registration error:", error)
+      if (error.response?.data?.message) {
+        setError(error.response.data.message)
       } else {
-        setError("An unexpected error occurred")
-        console.error(err)
+        setError("Registration failed. Please try again.")
       }
     } finally {
       setLoading(false)
@@ -212,24 +216,46 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
         <div className="grid grid-cols-2 gap-4">
           <Input
             type="text"
-            name="firstName"
+            name="firstname"
             placeholder="First Name"
             className="h-12"
             onChange={handleChanges}
+            value={values.firstname}
             required
           />
           <Input
             type="text"
-            name="lastName"
+            name="lastname"
             placeholder="Last Name"
             className="h-12"
             onChange={handleChanges}
+            value={values.lastname}
             required
           />
         </div>
 
         <div>
-          <Input type="email" name="email" placeholder="Email" className="h-12" onChange={handleChanges} required />
+          <Input 
+            type="email" 
+            name="email" 
+            placeholder="Email" 
+            className="h-12" 
+            onChange={handleChanges} 
+            value={values.email}
+            required 
+          />
+        </div>
+
+         <div>
+          <Input 
+            type="text" 
+            name="contact" 
+            placeholder="Contact Number" 
+            className="h-12" 
+            onChange={handleChanges} 
+            value={values.contact}
+            required 
+          />
         </div>
 
         <div>
@@ -239,6 +265,7 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
             placeholder="Password"
             className="h-12"
             onChange={handleChanges}
+            value={values.password}
             required
           />
         </div>
@@ -250,12 +277,23 @@ function RegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
             placeholder="Confirm Password"
             className="h-12"
             onChange={handleChanges}
+            value={values.confirmPassword}
             required
           />
         </div>
 
         <Button type="submit" className="h-12 w-full bg-blue-500 hover:bg-blue-600" disabled={loading}>
-          {loading ? "Registering..." : "Register"}
+          {loading ? (
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Registering...
+            </span>
+          ) : (
+            "Register"
+          )}
         </Button>
 
         <div className="mt-4 text-center">
@@ -287,7 +325,7 @@ function Login() {
       {/* Left side with image and overlay text */}
       <div className="relative hidden md:block md:w-3/5">
         <img
-          src="https://cdn.pixabay.com/photo/2022/07/10/19/30/house-7313645_1280.jpg"
+          src="https://images.pexels.com/photos/1546168/pexels-photo-1546168.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
           className="h-full w-full object-cover"
           alt="Background"
         />

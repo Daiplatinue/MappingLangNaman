@@ -1,5 +1,6 @@
-import type React from "react"
+"use client"
 
+import type React from "react"
 import { useState } from "react"
 import {
   Home,
@@ -36,6 +37,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import axios from "axios"
 
 const householdData = {
   id: "A3",
@@ -102,7 +104,6 @@ const householdData = {
   ],
   requests: [
     { id: 1, type: "Maintenance", status: "Completed", date: "2023-12-15", description: "Water pipe leakage" },
-    { id: 2, type: "Utility", status: "Pending", date: "2024-03-01", description: "Electricity meter check" },
   ],
   incidents: [
     { id: 1, type: "Security", status: "Resolved", date: "2023-11-10", description: "Suspicious person near house" },
@@ -228,7 +229,6 @@ const RequestCard = ({
     </Card>
   )
 }
-
 
 const OnlinePaymentDialog = ({ setActiveTab }: { setActiveTab: (value: string) => void }) => {
   const [paymentType, setPaymentType] = useState("utilities")
@@ -398,11 +398,75 @@ const OnlinePaymentDialog = ({ setActiveTab }: { setActiveTab: (value: string) =
   )
 }
 
-// Main Component
 function HouseholdOwner() {
   const [activeTab, setActiveTab] = useState("dashboard")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
   const [showDashboardDetails, setShowDashboardDetails] = useState(false)
+  const [emergencySubmitted, setEmergencySubmitted] = useState(false)
 
+  // Get user data from localStorage
+  const user = JSON.parse(localStorage.getItem("user") || "{}")
+  const userId = user._id || "Not available"
+  const userFirstname = user.firstname || "Not available"
+  const userLastname = user.lastname || "Not available"
+
+  const [values, setValues] = useState({
+    type: "",
+    description: "",
+    contact: "",
+  })
+
+  const handleEmergency = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+
+    try {
+      // Validate form fields
+      if (!values.type) {
+        setError("Please select an emergency type")
+        setLoading(false)
+        return
+      }
+
+      if (!values.description) {
+        setError("Please provide a description")
+        setLoading(false)
+        return
+      }
+
+      if (!values.contact) {
+        setError("Please provide a contact number")
+        setLoading(false)
+        return
+      }
+
+      console.log("Submitting emergency:", values)
+
+      const response = await axios.post("http://localhost:3000/postEmergency", {
+        type: values.type,
+        description: values.description,
+        contact: values.contact,
+      })
+
+      if (response.data) {
+        // Store emergency data and show success
+        localStorage.setItem("emergency", JSON.stringify(response.data))
+        setValues({
+          type: "",
+          description: "",
+          contact: "",
+        })
+        setEmergencySubmitted(true)
+      }
+    } catch (error: any) {
+      console.error("Emergency submission error:", error)
+      setError(error.response?.data?.message || "Connection error. Please try again later.")
+    } finally {
+      setLoading(false)
+    }
+  }
   const waterChange =
     ((householdData.waterConsumption.current - householdData.waterConsumption.previous) /
       householdData.waterConsumption.previous) *
@@ -421,7 +485,7 @@ function HouseholdOwner() {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-primary/10">
-              House ID: {JSON.parse(localStorage.getItem("users") || '{"hid":""}').hid}
+              User ID: {userId}
             </Badge>
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
@@ -476,7 +540,9 @@ function HouseholdOwner() {
                     onClick={() => setShowDashboardDetails(!showDashboardDetails)}
                   >
                     <Eye className="h-4 w-4" />
-                    <span className="hidden sm:inline">{showDashboardDetails ? "Hide Consumptions" : "Show Consumptions"}</span>
+                    <span className="hidden sm:inline">
+                      {showDashboardDetails ? "Hide Consumptions" : "Show Consumptions"}
+                    </span>
                   </Button>
                 </div>
 
@@ -850,19 +916,28 @@ function HouseholdOwner() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          {Array.from({ length: householdData.occupants }).map((_, index) => (
-                            <div key={`occupant-${index}`} className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Users className="h-5 w-5 text-primary" />
-                              </div>
-                              <div>
-                                <p className="font-medium">Occupant {index + 1}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {index === 0 ? "Primary Resident" : "Family Member"}
-                                </p>
-                              </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Users className="h-5 w-5 text-primary" />
                             </div>
-                          ))}
+                            <div>
+                              <p className="font-medium">
+                                {userFirstname}, {userLastname}
+                              </p>
+                              <p className="text-xs text-muted-foreground">Primary Resident</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Users className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">
+                                {userFirstname}, {userLastname}
+                              </p>
+                              <p className="text-xs text-muted-foreground">Members</p>
+                            </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -918,65 +993,142 @@ function HouseholdOwner() {
                     <Badge variant="destructive">Urgent</Badge>
                   </div>
 
-                  <Card className="border-red-200">
-                    <CardHeader className="bg-red-50 border-b border-red-100">
-                      <CardTitle className="text-red-700 flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5" />
-                        Submit Emergency Request
-                      </CardTitle>
-                      <CardDescription className="text-red-600">
-                        This will be sent immediately to the community management team.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <div className="grid gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="emergency-type">Emergency Type</Label>
-                          <Select defaultValue="medical">
-                            <SelectTrigger id="emergency-type">
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="medical">Medical Emergency</SelectItem>
-                              <SelectItem value="fire">Fire</SelectItem>
-                              <SelectItem value="security">Security Threat</SelectItem>
-                              <SelectItem value="utility">Critical Utility Failure</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
+                  {emergencySubmitted ? (
+                    <Card className="border-green-200">
+                      <CardHeader className="bg-green-50 border-b border-green-100">
+                        <CardTitle className="text-green-700 flex items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Emergency Request Submitted
+                        </CardTitle>
+                        <CardDescription className="text-green-600">
+                          Your emergency request has been sent successfully to the community management team.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-6">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                          <p className="text-green-800 text-sm">
+                            The management team has been notified and will respond promptly. If immediate assistance is
+                            needed, please use the emergency contact below.
+                          </p>
                         </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="emergency-description">Brief Description</Label>
-                          <Textarea
-                            id="emergency-description"
-                            placeholder="Describe the emergency situation..."
-                            className="min-h-[120px]"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="contact-number">Contact Number</Label>
-                          <Input id="contact-number" placeholder="Your contact number" />
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
-                      <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
-                        Submit Emergency Request
-                      </Button>
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <div className="p-3 bg-red-100 rounded-full">
-                            <Phone className="h-5 w-5 text-red-500" />
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 bg-red-100 rounded-full">
+                              <Phone className="h-5 w-5 text-red-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium">Community Emergency Line</p>
+                              <p className="text-sm text-muted-foreground">Available 24/7</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">Community Emergency Line</p>
-                            <p className="text-sm text-muted-foreground">Available 24/7</p>
-                          </div>
+                          <Button variant="destructive">Call Now</Button>
                         </div>
-                        <Button variant="destructive">Call Now</Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
+                      </CardContent>
+                      <CardFooter>
+                        <Button className="w-full" onClick={() => setEmergencySubmitted(false)}>
+                          Submit Another Request
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ) : (
+                    <Card className="border-red-200">
+                      <CardHeader className="bg-red-50 border-b border-red-100">
+                        <CardTitle className="text-red-700 flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5" />
+                          Submit Emergency Request
+                        </CardTitle>
+                        <CardDescription className="text-red-600">
+                          This will be sent immediately to the community management team.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-6">
+                        <form onSubmit={handleEmergency}>
+                          <div className="grid gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="emergency-type">Emergency Type</Label>
+                              <Select
+                                name="type"
+                                value={values.type}
+                                onValueChange={(value) => setValues((prev) => ({ ...prev, type: value }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="medical">Medical Emergency</SelectItem>
+                                  <SelectItem value="fire">Fire</SelectItem>
+                                  <SelectItem value="security">Security Threat</SelectItem>
+                                  <SelectItem value="utility">Critical Utility Failure</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="emergency-description">Brief Description</Label>
+                              <Textarea
+                                id="emergency-description"
+                                name="description"
+                                value={values.description}
+                                onChange={(e) => setValues((prev) => ({ ...prev, description: e.target.value }))}
+                                placeholder="Describe the emergency situation..."
+                                className="min-h-[120px]"
+                              />
+
+                              <Input
+                                id="contact-number"
+                                name="contact"
+                                value={values.contact}
+                                onChange={(e) => setValues((prev) => ({ ...prev, contact: e.target.value }))}
+                                placeholder="Your contact number"
+                              />
+                            </div>
+
+                            {error && (
+                              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                                <AlertTriangle className="h-4 w-4 inline mr-2" />
+                                {error}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-4 mt-6">
+                            <Button type="submit" className="w-full bg-red-500 hover:bg-red-600" disabled={loading}>
+                              {loading ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                                  Submitting...
+                                </div>
+                              ) : (
+                                "Submit Emergency Request"
+                              )}
+                            </Button>
+                          </div>
+                        </form>
+                      </CardContent>
+                      <CardFooter className="block">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 bg-red-100 rounded-full">
+                              <Phone className="h-5 w-5 text-red-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium">Community Emergency Line</p>
+                              <p className="text-sm text-muted-foreground">Available 24/7</p>
+                            </div>
+                          </div>
+                          <Button variant="destructive">Call Now</Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  )}
                 </TabsContent>
 
                 {/* New Request Tab */}
