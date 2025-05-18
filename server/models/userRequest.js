@@ -1,15 +1,23 @@
 import mongoose from "mongoose"
 
-const EmergencySchema = new mongoose.Schema({
+const RequestSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
   },
-  description: {
+  desc: {
     type: String,
     required: true,
   },
-  contact: {
+  date: {
+    type: Date,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+  priority: {
     type: String,
     required: true,
   },
@@ -27,6 +35,6 @@ const EmergencySchema = new mongoose.Schema({
   },
 })
 
-const Emergency = mongoose.model("Emergency", EmergencySchema)
+const Request = mongoose.model("Request", RequestSchema)
 
-export { Emergency }
+export { Request }

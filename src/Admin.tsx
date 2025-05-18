@@ -21,7 +21,6 @@ import {
   Users,
   Zap,
   AlertTriangle,
-  Check,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -75,30 +74,6 @@ import {
 } from "./AdminTabs/blocks-data"
 
 import axios from "axios"
-
-// Add this helper function to format dates
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return "N/A"
-
-  try {
-    // Handle MySQL date format (YYYY-MM-DD)
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) {
-      // If it's not a valid date, return the original string
-      return dateString
-    }
-
-    // Format the date
-    const month = date.toLocaleString("en-US", { month: "short" })
-    const day = date.getDate()
-    const year = date.getFullYear()
-
-    return `${month} ${day}, ${year}`
-  } catch (error) {
-    console.error("Error formatting date:", error)
-    return dateString
-  }
-}
 
 const StatCard = ({ icon, title, value, description, color }: any) => {
   return (
@@ -313,10 +288,6 @@ function AdminDashboard() {
     endDate: "",
   })
 
-  // Add these state variables after the other state declarations (around line 200)
-  const [apiConstructionData, setApiConstructionData] = useState<any[]>([])
-  const [isLoadingConstruction, setIsLoadingConstruction] = useState(false)
-
   const totalBlocks = blocksData.length
   const totalHouseholds = blocksData.reduce((sum, block) => sum + block.totalHouseholds, 0)
   const totalWaterConsumption = blocksData.reduce((sum, block) => sum + block.waterConsumption, 0)
@@ -417,137 +388,6 @@ function AdminDashboard() {
     toast.success("Household status updated successfully")
   }
 
-  const handleAddIncident = async (incident: any) => {
-    if (!incident.blockId || !incident.householdId || !incident.type || !incident.description) {
-      console.error("Incident validation failed:", {
-        blockId: incident.blockId,
-        householdId: incident.householdId,
-        type: incident.type,
-        description: incident.description,
-      })
-      toast.error("Please fill in all required fields")
-      return
-    }
-
-    try {
-      const incidentData = {
-        block: incident.blockId,
-        hid: incident.householdId,
-        type: incident.type,
-        description: incident.description,
-      }
-
-      const response = await axios.post("http://localhost:3004/post/incident", incidentData)
-
-      if (response.status === 201) {
-        const newId = incidentsData.length > 0 ? Math.max(...incidentsData.map((i) => i.id)) + 1 : 1
-        const newIncident = {
-          ...incident,
-          id: newId,
-          date: new Date().toISOString().split("T")[0],
-          status: "In Progress",
-        }
-
-        console.log("New incident to be added:", newIncident)
-        setIncidentsData([...incidentsData, newIncident])
-
-        const updatedBlocks = blocksData.map((block) => {
-          if (block.id === incident.blockId) {
-            return {
-              ...block,
-              incidents: block.incidents + 1,
-            }
-          }
-          return block
-        })
-        setBlocksData(updatedBlocks)
-
-        console.log("Incident added successfully:", newIncident)
-        toast.success("Incident reported successfully and saved to database")
-        fetchIncidents()
-      }
-    } catch (error) {
-      console.error("Error adding incident:", error)
-      toast.error("Failed to report incident to database")
-    }
-  }
-
-  const handleAddConstruction = async (construction: any) => {
-    if (!construction.householdId || !construction.status || !construction.startDate) {
-      toast.error("Please fill in all required fields")
-      return
-    }
-
-    const household = householdsData.find((h) => h.id === construction.householdId)
-    if (!household) {
-      toast.error("Household not found")
-      return
-    }
-
-    try {
-      const constructionData = {
-        block: construction.blockId,
-        hid: construction.householdId,
-        status: construction.status,
-        startDate: construction.startDate,
-        endDate: construction.endDate || null,
-      }
-
-      const response = await axios.post("http://localhost:3004/post/construction", constructionData)
-
-      if (response.status === 201) {
-        const updatedHouseholds = householdsData.map((h) => {
-          if (h.id === construction.householdId) {
-            return {
-              ...h,
-              status: construction.status,
-            }
-          }
-          return h
-        })
-        setHouseholdsData(updatedHouseholds)
-
-        const updatedBlocks = blocksData.map((block) => {
-          if (block.id === household.blockId) {
-            let newUnderRenovation = block.underRenovation
-            let newUpcomingRenovation = block.upcomingRenovation
-            let newUnderConstruction = block.underConstruction
-
-            if (construction.status === "Under Renovation") newUnderRenovation++
-            else if (construction.status === "Upcoming Renovation") newUpcomingRenovation++
-            else if (construction.status === "Under Construction") newUnderConstruction++
-
-            return {
-              ...block,
-              underRenovation: newUnderRenovation,
-              upcomingRenovation: newUpcomingRenovation,
-              underConstruction: newUnderConstruction,
-            }
-          }
-          return block
-        })
-        setBlocksData(updatedBlocks)
-
-        toast.success(`${construction.status} added successfully`)
-
-        setConstructionForm({
-          blockId: "",
-          householdId: "",
-          status: "",
-          startDate: "",
-          endDate: "",
-        })
-
-        document
-          .querySelector('[role="dialog"]')
-          ?.closest('div[data-state="open"]')
-          ?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))
-      }
-    } catch (error) {
-      toast.error("Failed to add construction")
-    }
-  }
-
   const handleSendNotification = (notification: any) => {
     const newId = notificationsData.length > 0 ? Math.max(...notificationsData.map((n) => n.id)) + 1 : 1
     const newNotification = {
@@ -584,65 +424,55 @@ function AdminDashboard() {
     }
   }
 
-  const handleAssignUser = async (userId: number, blockId: string, householdId: string) => {
+  const handleAssignUser = (userId: number, blockId: string, householdId: string) => {
     const user = usersData.find((u) => u.id === userId)
     if (!user) return
 
     const oldHouseholdId = user.householdId
 
-    try {
+    const updatedUsers = usersData.map((u) => {
+      if (u.id === userId) {
+        return {
+          ...u,
+          blockId: blockId,
+          householdId: householdId,
+        }
+      }
+      return u
+    })
 
-      // const response = await axios.post("http://localhost:3004/post/updateUserHousehold", userData)
+    setUsersData(updatedUsers)
 
-      const updatedUsers = usersData.map((u) => {
-        if (u.id === userId) {
+    if (oldHouseholdId) {
+      const updatedHouseholds = householdsData.map((h) => {
+        if (h.id === oldHouseholdId) {
           return {
-            ...u,
-            blockId: blockId,
-            householdId: householdId,
+            ...h,
+            occupants: Math.max(0, h.occupants - 1),
           }
         }
-        return u
+        return h
       })
+      setHouseholdsData(updatedHouseholds)
+    }
 
-      setUsersData(updatedUsers)
-
-      if (oldHouseholdId) {
-        const updatedHouseholds = householdsData.map((h) => {
-          if (h.id === oldHouseholdId) {
-            return {
-              ...h,
-              occupants: Math.max(0, h.occupants - 1),
-            }
+    if (householdId) {
+      const updatedHouseholds = householdsData.map((h) => {
+        if (h.id === householdId) {
+          return {
+            ...h,
+            occupants: h.occupants + 1,
           }
-          return h
-        })
-        setHouseholdsData(updatedHouseholds)
-      }
+        }
+        return h
+      })
+      setHouseholdsData(updatedHouseholds)
+    }
 
-      if (householdId) {
-        const updatedHouseholds = householdsData.map((h) => {
-          if (h.id === householdId) {
-            return {
-              ...h,
-              occupants: h.occupants + 1,
-            }
-          }
-          return h
-        })
-        setHouseholdsData(updatedHouseholds)
-      }
-
-      if (householdId) {
-        toast.success(`User assigned to ${householdId}`)
-      } else {
-        toast.success(`User unassigned from ${oldHouseholdId}`)
-      }
-
-      fetchUsers()
-    } catch (error) {
-      console.error("Error assigning user:", error)
-      toast.error("Failed to assign user")
+    if (householdId) {
+      toast.success(`User assigned to ${householdId}`)
+    } else {
+      toast.success(`User unassigned from ${oldHouseholdId}`)
     }
   }
 
@@ -709,191 +539,8 @@ function AdminDashboard() {
     toast.success(`${guard.firstName} ${guard.lastName} assigned to ${location} for ${shift}`)
   }
 
-  interface userDatas {
-    u_id: number
-    u_firstname: string
-    u_lastname: string
-    u_middlename: string
-    u_email: string
-    u_refs: string
-    u_type: string
-    u_block: string
-    u_status: string
-  }
-
-  const [userDatas] = useState<userDatas>({
-    u_id: 0,
-    u_firstname: "",
-    u_lastname: "",
-    u_middlename: "",
-    u_email: "",
-    u_refs: "",
-    u_type: "",
-    u_block: "",
-    u_status: "",
-  })
-
-  const fetchGuards = async () => {
-    try {
-      const response = await axios.get("http://localhost:3004/get/guards")
-
-      if (response.data && response.data.success) {
-        console.log("Fetched guards:", response.data.guards)
-        setGuardsData(response.data.guards)
-      } else {
-        console.error("Failed to fetch guards:", response.data)
-        toast.error("Failed to fetch guards")
-        setGuardsData([])
-      }
-    } catch (error) {
-      console.error("Error fetching guards:", error)
-      toast.error("Failed to fetch guards")
-      setGuardsData([])
-    }
-  }
-
   useEffect(() => {
-    console.log("Fetching guards...")
-    fetchGuards()
-    fetchUsers()
   }, [])
-
-  const [apiUsersData, setApiUsersData] = useState<any[]>([])
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
-
-  const fetchUsers = async () => {
-    try {
-      setIsLoadingUsers(true)
-      const response = await axios.get("http://localhost:3004/get/users")
-
-      if (response.data && response.data.success) {
-        console.log("Fetched users:", response.data.users)
-        setApiUsersData(response.data.users)
-      } else {
-        console.error("Failed to fetch users:", response.data)
-        toast.error("Failed to fetch users")
-        setApiUsersData([])
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      toast.error("Failed to fetch users")
-      setApiUsersData([])
-    } finally {
-      setIsLoadingUsers(false)
-    }
-  }
-
-  const [apiIncidentsData, setApiIncidentsData] = useState<any[]>([])
-  const [isLoadingIncidents, setIsLoadingIncidents] = useState(false)
-  const [isUpdatingIncidentStatus, setIsUpdatingIncidentStatus] = useState<number | null>(null)
-
-  const fetchIncidents = async () => {
-    try {
-      setIsLoadingIncidents(true)
-      const response = await axios.get("http://localhost:3004/get/fetchIncident")
-
-      if (response.data && response.data.success) {
-        console.log("Fetched incidents:", response.data.users)
-        setApiIncidentsData(response.data.users)
-      } else {
-        console.error("Failed to fetch incidents:", response.data)
-        toast.error("Failed to fetch incidents")
-        setApiIncidentsData([])
-      }
-    } catch (error) {
-      console.error("Error fetching incidents:", error)
-      toast.error("Failed to fetch incidents")
-      setApiIncidentsData([])
-    } finally {
-      setIsLoadingIncidents(false)
-    }
-  }
-
-  // Add this function after the other fetch functions (around line 600)
-  const fetchConstruction = async () => {
-    try {
-      setIsLoadingConstruction(true)
-      const response = await axios.get("http://localhost:3004/get/fetchConstruction")
-
-      if (response.data && response.data.success) {
-        console.log("Fetched construction data:", response.data.constructions)
-        setApiConstructionData(response.data.constructions)
-      } else {
-        console.error("Failed to fetch construction data:", response.data)
-        toast.error("Failed to fetch construction data")
-        setApiConstructionData([])
-      }
-    } catch (error) {
-      console.error("Error fetching construction data:", error)
-      toast.error("Failed to fetch construction data")
-      setApiConstructionData([])
-    } finally {
-      setIsLoadingConstruction(false)
-    }
-  }
-
-  const handleUpdateIncidentStatus = async (incidentId: number) => {
-    try {
-      setIsUpdatingIncidentStatus(incidentId)
-      const response = await axios.post("http://localhost:3004/post/updateIncidentStatus", { incidentId })
-
-      if (response.data && response.data.success) {
-        // Update the local state
-        setApiIncidentsData((prevData) =>
-          prevData.map((incident) => (incident.i_id === incidentId ? { ...incident, i_status: "Resolved" } : incident)),
-        )
-        toast.success("Incident marked as resolved")
-      } else {
-        toast.error("Failed to update incident status")
-      }
-    } catch (error) {
-      console.error("Error updating incident status:", error)
-      toast.error("Failed to update incident status")
-    } finally {
-      setIsUpdatingIncidentStatus(null)
-    }
-  }
-
-  const formatIncidentDate = (dateString: string) => {
-    if (!dateString) return "N/A"
-
-    try {
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) return dateString
-
-      const month = date.toLocaleString("en-US", { month: "short" })
-      const day = date.getDate()
-      const year = date.getFullYear()
-
-      return `${month}, ${day}, ${year}`
-    } catch (error) {
-      console.error("Error formatting date:", error)
-      return dateString
-    }
-  }
-
-  useEffect(() => {
-    if (activeTab === "users") {
-      console.log("Fetching users...")
-      fetchUsers()
-      fetchGuards()
-    }
-  }, [activeTab])
-
-  useEffect(() => {
-    if (activeTab === "incidents") {
-      console.log("Fetching incidents...")
-      fetchIncidents()
-    }
-  }, [activeTab])
-
-  // Add this useEffect to fetch construction data when the tab is active (around line 650)
-  useEffect(() => {
-    if (activeTab === "construction") {
-      console.log("Fetching construction data...")
-      fetchConstruction()
-    }
-  }, [activeTab])
 
   return (
     <SidebarProvider>
@@ -1013,7 +660,7 @@ function AdminDashboard() {
                     <span>Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => (window.location.href = "/")}>
+                  <DropdownMenuItem>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -1142,26 +789,24 @@ function AdminDashboard() {
                           {incidentsData.slice(0, 4).map((incident) => (
                             <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
                               <div
-                                className={`p-2 rounded-full ${
-                                  incident.type === "Security"
-                                    ? "bg-red-100"
-                                    : incident.type === "Maintenance"
-                                      ? "bg-blue-100"
-                                      : incident.type === "Noise"
-                                        ? "bg-yellow-100"
-                                        : "bg-purple-100"
-                                }`}
+                                className={`p-2 rounded-full ${incident.type === "Security"
+                                  ? "bg-red-100"
+                                  : incident.type === "Maintenance"
+                                    ? "bg-blue-100"
+                                    : incident.type === "Noise"
+                                      ? "bg-yellow-100"
+                                      : "bg-purple-100"
+                                  }`}
                               >
                                 <AlertTriangle
-                                  className={`h-4 w-4 ${
-                                    incident.type === "Security"
-                                      ? "text-red-500"
-                                      : incident.type === "Maintenance"
-                                        ? "text-blue-500"
-                                        : incident.type === "Noise"
-                                          ? "text-yellow-500"
-                                          : "text-purple-500"
-                                  }`}
+                                  className={`h-4 w-4 ${incident.type === "Security"
+                                    ? "text-red-500"
+                                    : incident.type === "Maintenance"
+                                      ? "text-blue-500"
+                                      : incident.type === "Noise"
+                                        ? "text-yellow-500"
+                                        : "text-purple-500"
+                                    }`}
                                 />
                               </div>
                               <div>
@@ -1413,26 +1058,24 @@ function AdminDashboard() {
                                 filteredIncidents.map((incident) => (
                                   <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
                                     <div
-                                      className={`p-2 rounded-full ${
-                                        incident.type === "Security"
-                                          ? "bg-red-100"
-                                          : incident.type === "Maintenance"
-                                            ? "bg-blue-100"
-                                            : incident.type === "Noise"
-                                              ? "bg-yellow-100"
-                                              : "bg-purple-100"
-                                      }`}
+                                      className={`p-2 rounded-full ${incident.type === "Security"
+                                        ? "bg-red-100"
+                                        : incident.type === "Maintenance"
+                                          ? "bg-blue-100"
+                                          : incident.type === "Noise"
+                                            ? "bg-yellow-100"
+                                            : "bg-purple-100"
+                                        }`}
                                     >
                                       <AlertTriangle
-                                        className={`h-4 w-4 ${
-                                          incident.type === "Security"
-                                            ? "text-red-500"
-                                            : incident.type === "Maintenance"
-                                              ? "text-blue-500"
-                                              : incident.type === "Noise"
-                                                ? "text-yellow-500"
-                                                : "text-purple-500"
-                                        }`}
+                                        className={`h-4 w-4 ${incident.type === "Security"
+                                          ? "text-red-500"
+                                          : incident.type === "Maintenance"
+                                            ? "text-blue-500"
+                                            : incident.type === "Noise"
+                                              ? "text-yellow-500"
+                                              : "text-purple-500"
+                                          }`}
                                       />
                                     </div>
                                     <div>
@@ -1599,6 +1242,8 @@ function AdminDashboard() {
                           <SelectItem value="in-progress">In Progress</SelectItem>
                         </SelectContent>
                       </Select>
+                      {/* Replace the incident form dialog content with this updated version that uses state
+                      // Find the incident form in the "Incidents Tab" section (around line 1600) */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="gap-2">
@@ -1697,42 +1342,10 @@ function AdminDashboard() {
                               type="submit"
                               disabled={isSubmittingIncident}
                               onClick={async () => {
-                                console.log("Submitting incident with data:", incidentForm)
 
-                                if (
-                                  !incidentForm.blockId ||
-                                  !incidentForm.householdId ||
-                                  !incidentForm.type ||
-                                  !incidentForm.description
-                                ) {
-                                  console.error("Missing required fields for incident:", incidentForm)
-                                  toast.error("Please fill in all required fields")
-                                  return
-                                }
-
-                                setIsSubmittingIncident(true)
-                                try {
-                                  await handleAddIncident(incidentForm)
-
-                                  setIncidentForm({
-                                    blockId: "",
-                                    householdId: "",
-                                    type: "",
-                                    description: "",
-                                  })
-                                } finally {
-                                  setIsSubmittingIncident(false)
-                                }
-                              }}
+                              }
+                              }
                             >
-                              {isSubmittingIncident ? (
-                                <>
-                                  <span className="mr-2">Reporting...</span>
-                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
-                                </>
-                              ) : (
-                                "Report Incident"
-                              )}
                             </Button>
                           </DialogFooter>
                         </DialogContent>
@@ -1754,64 +1367,34 @@ function AdminDashboard() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {isLoadingIncidents ? (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8">
-                                <div className="flex justify-center items-center">
-                                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                                  <span className="ml-2">Loading incidents...</span>
-                                </div>
+                          {incidentsData.map((incident) => (
+                            <TableRow key={incident.id}>
+                              <TableCell>{incident.date}</TableCell>
+                              <TableCell>
+                                {incident.blockId}-{incident.householdId}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{incident.type}</Badge>
+                              </TableCell>
+                              <TableCell>{incident.description}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    incident.status === "Resolved"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                  }
+                                >
+                                  {incident.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="sm">
+                                  View
+                                </Button>
                               </TableCell>
                             </TableRow>
-                          ) : apiIncidentsData.length > 0 ? (
-                            apiIncidentsData.map((incident, index) => (
-                              <TableRow key={incident.i_id || index}>
-                                <TableCell>{formatIncidentDate(incident.i_date)}</TableCell>
-                                <TableCell>{incident.i_hid}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">{incident.i_type || "Other"}</Badge>
-                                </TableCell>
-                                <TableCell>{incident.i_description}</TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={
-                                      incident.i_status === "Resolved"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-yellow-100 text-yellow-700"
-                                    }
-                                  >
-                                    {incident.i_status || "In Progress"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {incident.i_status !== "Resolved" ? (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="gap-1"
-                                      onClick={() => handleUpdateIncidentStatus(incident.i_id)}
-                                      disabled={isUpdatingIncidentStatus === incident.i_id}
-                                    >
-                                      {isUpdatingIncidentStatus === incident.i_id ? (
-                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
-                                      ) : (
-                                        <Check className="h-4 w-4 mr-1" />
-                                      )}
-                                      Mark as Resolved
-                                    </Button>
-                                  ) : (
-                                    <Badge className="bg-green-100 text-green-700">Resolved</Badge>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8">
-                                No incidents found. Report a new incident to get started.
-                              </TableCell>
-                            </TableRow>
-                          )}
+                          ))}
                         </TableBody>
                       </Table>
                     </CardContent>
@@ -1834,6 +1417,8 @@ function AdminDashboard() {
                           <SelectItem value="under-construction">Under Construction</SelectItem>
                         </SelectContent>
                       </Select>
+                      {/* Replace the construction form dialog content with this updated version that uses state
+                      // Find the construction form in the "Construction Tab" section (around line 1800) */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="gap-2">
@@ -1948,28 +1533,6 @@ function AdminDashboard() {
                             <Button
                               type="submit"
                               onClick={() => {
-                                console.log("Submitting construction with data:", constructionForm)
-
-                                if (
-                                  !constructionForm.householdId ||
-                                  !constructionForm.status ||
-                                  !constructionForm.startDate
-                                ) {
-                                  console.error("Missing required fields for construction:", constructionForm)
-                                  toast.error("Please fill in all required fields")
-                                  return
-                                }
-
-                                handleAddConstruction(constructionForm)
-
-                                // Reset form
-                                setConstructionForm({
-                                  blockId: "",
-                                  householdId: "",
-                                  status: "",
-                                  startDate: "",
-                                  endDate: "",
-                                })
                               }}
                             >
                               Add Construction
@@ -1986,6 +1549,7 @@ function AdminDashboard() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Household ID</TableHead>
+                            <TableHead>Address</TableHead>
                             <TableHead>Block</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Start Date</TableHead>
@@ -1993,53 +1557,38 @@ function AdminDashboard() {
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
-                        {/* Replace the TableBody in the Construction tab with this updated version (around line 2000) */}
                         <TableBody>
-                          {isLoadingConstruction ? (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8">
-                                <div className="flex justify-center items-center">
-                                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                                  <span className="ml-2">Loading construction data...</span>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ) : apiConstructionData.length > 0 ? (
-                            apiConstructionData.map((construction) => (
-                              <TableRow key={construction.c_id}>
-                                <TableCell>{construction.c_hid}</TableCell>
-                                <TableCell>{construction.c_block}</TableCell>
+                          {householdsData
+                            .filter((h) =>
+                              ["Under Renovation", "Upcoming Renovation", "Under Construction"].includes(h.status),
+                            )
+                            .map((household) => (
+                              <TableRow key={household.id}>
+                                <TableCell>{household.id}</TableCell>
+                                <TableCell>{household.address}</TableCell>
+                                <TableCell>Block {household.blockId}</TableCell>
                                 <TableCell>
                                   <Badge
                                     className={
-                                      construction.c_status === "Under Renovation"
+                                      household.status === "Under Renovation"
                                         ? "bg-orange-100 text-orange-700"
-                                        : construction.c_status === "Upcoming Renovation"
+                                        : household.status === "Upcoming Renovation"
                                           ? "bg-yellow-100 text-yellow-700"
-                                          : construction.c_status === "Under Construction"
-                                            ? "bg-purple-100 text-purple-700"
-                                            : "bg-green-100 text-green-700"
+                                          : "bg-purple-100 text-purple-700"
                                     }
                                   >
-                                    {construction.c_status || "Not specified"}
+                                    {household.status}
                                   </Badge>
                                 </TableCell>
-                                <TableCell>{formatDate(construction.c_startDate)}</TableCell>
-                                <TableCell>{formatDate(construction.c_endDate)}</TableCell>
+                                <TableCell>2023-04-15</TableCell>
+                                <TableCell>2023-06-30</TableCell>
                                 <TableCell className="text-right">
                                   <Button variant="ghost" size="sm">
                                     View
                                   </Button>
                                 </TableCell>
                               </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8">
-                                No construction records found. Add a new construction to get started.
-                              </TableCell>
-                            </TableRow>
-                          )}
+                            ))}
                         </TableBody>
                       </Table>
                     </CardContent>
@@ -2427,90 +1976,10 @@ function AdminDashboard() {
                             <Button
                               type="submit"
                               onClick={async () => {
-                                if (!newUser.firstName || !newUser.lastName || !newUser.email || !newUser.userType) {
-                                  toast.error("Please fill in all required fields")
-                                  return
-                                }
 
-                                if (newUser.userType === "customer" && (!newUser.blockId || !newUser.householdId)) {
-                                  toast.error("Please select a block and household for customer users")
-                                  return
-                                }
+                              }
 
-                                // Create the data to submit
-                                const userData = {
-                                  firstname: newUser.firstName,
-                                  lastname: newUser.lastName,
-                                  middlename: newUser.middleName || "",
-                                  email: newUser.email,
-                                  refs: generateReferralCode(),
-                                  type: newUser.userType,
-                                  block: newUser.blockId || "",
-                                  hid: newUser.householdId || "",
-                                }
-
-                                console.log("Submitting user data:", userData)
-
-                                // Submit directly to the API
-                                try {
-                                  const response = await axios.post("http://localhost:3004/post/addUser", userData)
-
-                                  if (response.status === 201) {
-                                    // Add to UI state
-                                    const newId = usersData.length > 0 ? Math.max(...usersData.map((u) => u.id)) + 1 : 1
-                                    const referralCode = userData.refs
-                                    const updatedUser = {
-                                      ...newUser,
-                                      id: newId,
-                                      referralCode: referralCode,
-                                    }
-                                    setUsersData([...usersData, updatedUser])
-
-                                    if (newUser.userType === "customer" && newUser.householdId) {
-                                      const household = householdsData.find((h) => h.id === newUser.householdId)
-                                      if (household) {
-                                        const updatedHouseholds = householdsData.map((h) => {
-                                          if (h.id === newUser.householdId) {
-                                            return {
-                                              ...h,
-                                              occupants: h.occupants + 1,
-                                            }
-                                          }
-                                          return h
-                                        })
-                                        setHouseholdsData(updatedHouseholds)
-                                      }
-                                    }
-
-                                    setNewUser({
-                                      id: 0,
-                                      firstName: "",
-                                      lastName: "",
-                                      middleName: "",
-                                      email: "",
-                                      referralCode: "",
-                                      blockId: "",
-                                      householdId: "",
-                                      userType: "customer",
-                                    })
-                                    setIsAddUserOpen(false)
-                                    fetchUsers()
-                                    fetchGuards()
-                                    toast.success("User added successfully to database")
-                                  }
-                                } catch (err) {
-                                  if (axios.isAxiosError(err) && err.response) {
-                                    if (err.response.status === 409) {
-                                      toast.error("Email already exists. Please use a different email or sign in.")
-                                    } else {
-                                      toast.error(err.response.data.message || "Registration failed")
-                                    }
-                                  } else {
-                                    toast.error("An unexpected error occurred")
-                                    console.error(err)
-                                  }
-                                }
-                              }}
+                              }
                             >
                               Add User
                             </Button>
@@ -2534,66 +2003,50 @@ function AdminDashboard() {
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
-                        {/* Find the TableBody in the Users tab section and replace it with this: */}
                         <TableBody>
-                          {isLoadingUsers ? (
-                            <TableRow>
-                              <TableCell colSpan={7} className="text-center py-8">
-                                <div className="flex justify-center items-center">
-                                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                                  <span className="ml-2">Loading users...</span>
+                          {usersData.map((user) => (
+                            <TableRow key={user.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback>
+                                      {user.firstName.charAt(0)}
+                                      {user.lastName.charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <span className="font-medium">
+                                      {user.firstName} {user.lastName}
+                                    </span>
+                                    {user.middleName && (
+                                      <span className="text-xs text-muted-foreground ml-1">({user.middleName})</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>
+                                <Badge variant={user.userType === "guard" ? "secondary" : "default"}>
+                                  {user.userType === "guard" ? "Guard" : "Customer"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{user.referralCode}</TableCell>
+                              <TableCell>{user.blockId ? `Block ${user.blockId}` : "-"}</TableCell>
+                              <TableCell>
+                                {user.householdId || (user.userType === "guard" ? "N/A" : "Unassigned")}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="ghost" size="sm">
+                                    <MessageSquare className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm">
+                                    <Info className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ) : apiUsersData.length > 0 ? (
-                            apiUsersData.map((user) => (
-                              <TableRow key={user.u_id}>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarFallback>
-                                        {user.u_fn?.charAt(0) || ""}
-                                        {user.u_ln?.charAt(0) || ""}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <span className="font-medium">
-                                        {user.u_fn} {user.u_ln}
-                                      </span>
-                                      {user.u_mi && (
-                                        <span className="text-xs text-muted-foreground ml-1">({user.u_mi})</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>{user.u_email}</TableCell>
-                                <TableCell>
-                                  <Badge variant={user.u_type === "guard" ? "secondary" : "default"}>
-                                    {user.u_type === "guard" ? "Guard" : "Customer"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{user.u_refs}</TableCell>
-                                <TableCell>{user.u_block ? `Block ${user.u_block}` : "-"}</TableCell>
-                                <TableCell>{user.u_hid || (user.u_type === "guard" ? "N/A" : "Unassigned")}</TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button variant="ghost" size="sm">
-                                      <MessageSquare className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="sm">
-                                      <Info className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={7} className="text-center py-8">
-                                No users found. Add a new user to get started.
-                              </TableCell>
-                            </TableRow>
-                          )}
+                          ))}
                         </TableBody>
                       </Table>
                     </CardContent>
@@ -2668,6 +2121,11 @@ function AdminDashboard() {
                                                 <span className="text-sm text-muted-foreground block">
                                                   {occupants.length} occupant{occupants.length !== 1 ? "s" : ""}
                                                 </span>
+                                                {occupants.length > 0 && (
+                                                  <div className="mt-1 text-xs text-muted-foreground">
+                                                    {occupants.map((u) => `${u.firstName} ${u.lastName}`).join(", ")}
+                                                  </div>
+                                                )}
                                               </div>
                                               <Dialog>
                                                 <DialogTrigger asChild>
