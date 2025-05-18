@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
@@ -27,7 +29,6 @@ import {
   securityEntrances,
   polygonData,
   customPins,
-  defaultPinColors,
   type StatusType,
   type HouseProperties,
   type PinProperties,
@@ -172,9 +173,13 @@ const createSecurityIcon = () => {
   })
 }
 
-// Update the createPinIcon function to accept a color parameter
-const createPinIcon = (color?: string) => {
-  const pinColor = color || "#3B82F6" // Default to blue if no color provided
+// Update the createPinIcon function to accept a status parameter
+const createPinIcon = (status?: StatusType) => {
+  let pinColor = "#3B82F6" // Default to blue (Occupied) if no status provided
+
+  if (status) {
+    pinColor = getStatusColor(status)
+  }
 
   return L.divIcon({
     html: `<div class="map-pin">
@@ -188,10 +193,22 @@ const createPinIcon = (color?: string) => {
   })
 }
 
-// Update the CustomPinMarker component to improve the hover popup design
+// Update the CustomPinMarker component to use status-based colors
 const CustomPinMarker = ({ pin }: { pin: ResidenceData }) => {
   const markerRef = useRef<L.Marker>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // Determine the status based on the pin's description or default to "Occupied"
+  const determineStatus = (): StatusType => {
+    if (pin.description.includes("Unoccupied")) return "Unoccupied"
+    if (pin.description.includes("Under Renovation")) return "Under Renovation"
+    if (pin.description.includes("Upcoming Renovation")) return "Upcoming Renovation"
+    if (pin.description.includes("Under Construction")) return "Under Construction"
+    if (pin.description.includes("Upcoming Construction")) return "Upcoming Construction"
+    return "Occupied"
+  }
+
+  const status = determineStatus()
 
   const handleMouseOver = (e: L.LeafletMouseEvent) => {
     const markerElement = e.target.getElement()
@@ -228,7 +245,7 @@ const CustomPinMarker = ({ pin }: { pin: ResidenceData }) => {
       <Marker
         ref={markerRef}
         position={pin.position}
-        icon={createPinIcon(pin.color)}
+        icon={createPinIcon(status)}
         eventHandlers={{
           mouseover: handleMouseOver,
           click: handleClick,
@@ -281,52 +298,42 @@ const CustomPinMarker = ({ pin }: { pin: ResidenceData }) => {
   )
 }
 
-// Add a color picker component for pin customization
+// Update the PinColorPicker component to show status-based colors
 const PinColorPicker = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedColor, setSelectedColor] = useState(defaultPinColors[0])
 
-  const handleColorChange = (color: string) => {
-    // Find all pins without a custom color
-    const pinsToUpdate = customPins.filter((pin) => !pin.color)
-
-    // Update their colors
-    pinsToUpdate.forEach((pin) => {
-      pin.color = color
-    })
-
-    setSelectedColor(color)
-    setIsOpen(false)
-
-    toast.success("Pin colors updated!", {
-      description: "All default pins have been updated with the new color.",
-      duration: 3000,
-    })
-  }
+  const statusColors = [
+    { status: "Occupied", color: "#3B82F6", label: "Occupied (Blue)" },
+    { status: "Unoccupied", color: "#FFFFFF", label: "Unoccupied (White)" },
+    { status: "Under Renovation", color: "#F59E0B", label: "Under Renovation (Yellow)" },
+    { status: "Under Construction", color: "#EF4444", label: "Under Construction (Red)" },
+  ]
 
   return (
     <div className="absolute bottom-4 right-4 z-[1000]">
       <Button variant="outline" className="bg-background/80 backdrop-blur-sm" onClick={() => setIsOpen(!isOpen)}>
-        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: selectedColor }}></div>
-        Customize Pins
+        <MapPin className="w-4 h-4 mr-2" />
+        Pin Legend
       </Button>
 
       {isOpen && (
         <Card className="absolute bottom-12 right-0 w-64 p-2">
           <CardHeader className="p-2">
-            <CardTitle className="text-sm">Choose Pin Color</CardTitle>
+            <CardTitle className="text-sm">Pin Color Legend</CardTitle>
           </CardHeader>
           <CardContent className="p-2">
-            <div className="grid grid-cols-4 gap-2">
-              {defaultPinColors.map((color, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="w-full h-8 p-0"
-                  onClick={() => handleColorChange(color)}
-                >
-                  <div className="w-full h-full rounded-sm" style={{ backgroundColor: color }}></div>
-                </Button>
+            <div className="grid gap-2">
+              {statusColors.map((item, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded-full"
+                    style={{
+                      backgroundColor: item.color,
+                      border: item.color === "#FFFFFF" ? "1px solid #e2e8f0" : "none",
+                    }}
+                  ></div>
+                  <span className="text-xs">{item.label}</span>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -376,6 +383,7 @@ export default function MapViewer() {
 
       // Add custom CSS for the map pins
       style = document.createElement("style")
+      // Update the CSS styles for the pins
       style.textContent = `
   .custom-pin-icon {
     contain: layout;
@@ -396,7 +404,7 @@ export default function MapViewer() {
   .pin-head {
     width: 20px;
     height: 20px;
-    background-color: #3B82F6; /* Changed to blue-500 */
+    background-color: #3B82F6; /* Default blue */
     border: 2px solid white;
     border-radius: 50%;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
@@ -408,7 +416,7 @@ export default function MapViewer() {
   .pin-tail {
     width: 2px;
     height: 20px;
-    background: linear-gradient(to bottom, #3B82F6, transparent); /* Changed to blue-500 */
+    background: linear-gradient(to bottom, #3B82F6, transparent); /* Default blue */
     position: absolute;
     top: 18px;
     left: 14px;
@@ -423,6 +431,11 @@ export default function MapViewer() {
     bottom: 0;
     left: 8px;
     filter: blur(1px);
+  }
+  
+  /* Add special styling for white pins to make them visible */
+  .map-pin .pin-head[style*="background-color: #FFFFFF"] {
+    border: 2px solid #e2e8f0;
   }
   
   .pin-popup {

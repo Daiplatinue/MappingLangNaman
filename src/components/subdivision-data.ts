@@ -225,121 +225,106 @@ export const customPins: ResidenceData[] = [
     id: "res006",
     position: [10.249263, 123.787749],
     name: "Patel Residence",
-    description:
-      "A family of 4 that moved in 2022. Dr. Patel works at the local hospital and is known for hosting cultural events.",
+    description: "Occupants: Dr. Raj & Priya Patel, Arjun (12), Anika (9)",
     occupants: 4,
   },
   {
     id: "res007",
     position: [10.249516, 123.787685],
     name: "Rodriguez Residence",
-    description:
-      "A family of 3 that relocated here in 2023. They run a popular catering business from their custom-built kitchen.",
+    description: "Occupants: Miguel & Isabella Rodriguez, Sofia (7)",
     occupants: 3,
   },
   {
     id: "res008",
     position: [10.250023, 123.787551],
     name: "Kim Residence",
-    description:
-      "A family of 5 that moved in 2020. They're known for their beautiful landscaping and annual holiday decorations.",
+    description: "Occupants: Jin & Min-ji Kim, Joon (15), Soo (12), Hana (8)",
     occupants: 5,
   },
   {
     id: "res009",
     position: [10.249997, 123.788329],
     name: "Taylor Residence",
-    description:
-      "A family of 4 that built this custom home in 2021. Mr. Taylor is a local architect who designed several homes in the area.",
-    occupants: 4,
+    description: "Unoccupied: Under Renovation - New owners arriving next month",
+    occupants: 0,
   },
   {
     id: "res010",
     position: [10.250048, 123.788477],
     name: "Nguyen Residence",
-    description:
-      "A young couple who moved in 2023. They're both environmental scientists and have implemented many eco-friendly features.",
+    description: "Occupants: Minh & Linh Nguyen",
     occupants: 2,
   },
   {
     id: "res011",
     position: [10.250086, 123.788618],
     name: "Wilson Residence",
-    description:
-      "A family of 3 that moved in 2022. They relocated from overseas and have brought unique cultural elements to their home.",
+    description: "Occupants: Thomas & Rebecca Wilson, Olivia (10)",
     occupants: 3,
   },
   {
     id: "res012",
     position: [10.250138, 123.788756],
     name: "Martinez Residence",
-    description:
-      "A large family of 5 that has lived here since 2020. They're active in the community and organize the annual block party.",
-    occupants: 5,
+    description: "Under Construction: Completion expected in September 2025",
+    occupants: 0,
   },
   {
     id: "res013",
     position: [10.250176, 123.788881],
     name: "Anderson Residence",
-    description:
-      "A wealthy family of 6 that built this luxury home in 2021. Mr. Anderson is a retired executive who collects vintage cars.",
+    description: "Occupants: Richard & Elizabeth Anderson, William (17), Charlotte (15), Benjamin (12), Grace (9)",
     occupants: 6,
   },
   {
     id: "res014",
     position: [10.249807, 123.788447],
     name: "Singh Residence",
-    description:
-      "A family of 4 that moved in 2022. They maintain a beautiful tropical garden and often share produce with neighbors.",
+    description: "Occupants: Arjun & Divya Singh, Rohan (14), Maya (11)",
     occupants: 4,
   },
   {
     id: "res015",
     position: [10.249701, 123.788549],
     name: "Brown Residence",
-    description:
-      "A family of 3 that relocated here in 2023. They're known for their artistic talents and host community art workshops.",
+    description: "Upcoming Renovation: Scheduled to begin in July 2025",
     occupants: 3,
   },
   {
     id: "res016",
     position: [10.24959, 123.78864],
     name: "Lee Residence",
-    description:
-      "A retired couple who moved in 2021. They've transformed their garden into a peaceful retreat that neighbors admire.",
+    description: "Occupants: David & Jennifer Lee",
     occupants: 2,
   },
   {
     id: "res017",
     position: [10.249458, 123.788747],
     name: "Davis Residence",
-    description:
-      "A family of 4 that built this modern home in 2022. Both parents work in finance and commute to the city center.",
-    occupants: 4,
+    description: "Unoccupied: Property for sale",
+    occupants: 0,
   },
   {
     id: "res018",
     position: [10.249353, 123.788854],
     name: "Gonzalez Residence",
-    description:
-      "A large family of 5 that moved in 2020. They're known for their weekend barbecues and welcoming nature.",
+    description: "Occupants: Antonio & Maria Gonzalez, Elena (16), Marco (13), Lucia (9)",
     occupants: 5,
   },
   {
     id: "res019",
     position: [10.249896, 123.788731],
     name: "Miller Residence",
-    description:
-      "A family of 4 that relocated here in 2021. Dr. Miller works at the university and often hosts student gatherings.",
-    occupants: 4,
+    description: "Occupants: Dr. James & Sarah Miller, Emma (14), Noah (11), Ava (8), Liam (5)",
+    occupants: 6,
   },
   {
     id: "res020",
     position: [10.249796, 123.788828],
     name: "Wong Residence",
-    description:
-      "A family of 3 that moved in 2022. They run a successful online business and have a state-of-the-art home office.",
-    occupants: 3,
+    description: "Upcoming Construction: New home build starting August 2025",
+    occupants: 0,
   },
   {
     id: "res021",
@@ -585,64 +570,56 @@ export const customPins: ResidenceData[] = [
     id: "res051",
     position: [10.250218, 123.788093],
     name: "Parking Lot",
-    description:
-      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    description: "A large parking area for residents and visitors. It's well-lit and monitored for security.",
     occupants: 3,
   },
   {
     id: "res052",
     position: [10.250271, 123.788307],
     name: "Parking Lot",
-    description:
-      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    description: "A large parking area for residents and visitors. It's well-lit and monitored for security.",
     occupants: 3,
   },
   {
     id: "res053",
     position: [10.250329, 123.788506],
     name: "Parking Lot",
-    description:
-      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    description: "A large parking area for residents and visitors. It's well-lit and monitored for security.",
     occupants: 3,
   },
   {
     id: "res054",
     position: [10.250424, 123.788699],
     name: "Parking Lot",
-    description:
-      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    description: "A large parking area for residents and visitors. It's well-lit and monitored for security.",
     occupants: 3,
   },
   {
     id: "res055",
     position: [10.250408, 123.789305],
     name: "Parking Lot",
-    description:
-      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    description: "A large parking area for residents and visitors. It's well-lit and monitored for security.",
     occupants: 3,
   },
   {
     id: "res056",
     position: [10.250118, 123.789364],
     name: "Parking Lot",
-    description:
-      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    description: "A large parking area for residents and visitors. It's well-lit and monitored for security.",
     occupants: 3,
   },
   {
     id: "res057",
     position: [10.247917, 123.789198],
     name: "Parking Lot",
-    description:
-      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    description: "A large parking area for residents and visitors. It's well-lit and monitored for security.",
     occupants: 3,
   },
   {
     id: "res058",
     position: [10.250155, 123.787894],
     name: "Parking Lot",
-    description:
-      "A large parking area for residents and visitors. It's well-lit and monitored for security.",
+    description: "A large parking area for residents and visitors. It's well-lit and monitored for security.",
     occupants: 3,
   },
 ]
@@ -861,6 +838,7 @@ export const polygonData: PolygonData[] = [
                 "Damage to common area during material delivery",
               ],
               Other: [
+                "Parking dispute with neighbors",
                 "Parking dispute with neighbors",
                 "Unauthorized landscape modification",
                 "Trash bins left out for extended period",
@@ -1272,7 +1250,6 @@ export const polygonData: PolygonData[] = [
                 "HVAC system failure requiring technician",
                 "Electrical wiring issue in kitchen",
                 "Roof damage from recent storm",
-                "Broken window replacement needed",
               ],
               Noise: [
                 "Complaint from neighbors about loud music",
@@ -1612,6 +1589,7 @@ export const polygonData: PolygonData[] = [
               ],
               Other: [
                 "Parking dispute with neighbors",
+                "Parking dispute with neighbors",
                 "Unauthorized landscape modification",
                 "Trash bins left out for extended period",
                 "Pet waste not cleaned up in common area",
@@ -1930,6 +1908,7 @@ export const polygonData: PolygonData[] = [
                 "Damage to common area during material delivery",
               ],
               Other: [
+                "Parking dispute with neighbors",
                 "Parking dispute with neighbors",
                 "Unauthorized landscape modification",
                 "Trash bins left out for extended period",
