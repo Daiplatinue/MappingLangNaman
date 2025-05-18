@@ -6,8 +6,9 @@ import { postEmergency } from "./controller/emergencyController.js"
 import { postRequest, getRequestsByRequester } from "./controller/userRequestController.js"
 import { postReport, getReportsByRequester, getAllReports } from "./controller/reportController.js"
 import { postPayment, getPaymentsByUserId, getAllPayments } from "./controller/paymentController.js"
-import { postConstruction } from "./controller/constructionController.js"
-import { postadminCreateUser } from "./controller/adminCreateUserController.js"
+import { postConstruction, getAllConstructions } from "./controller/constructionController.js"
+import { postadminCreateUser, getAllUsers } from "./controller/adminCreateUserController.js"
+import { postNotification, getAllNotifications } from "./controller/notificationController.js"
 
 import mongoose from "mongoose"
 
@@ -43,11 +44,15 @@ app.get("/payments/:userId", getPaymentsByUserId)
 
 // Admin Routes
 app.post("/postConstruction", postConstruction)
+app.get("/constructions", getAllConstructions)
 app.post("/postadminCreateUser", postadminCreateUser)
+app.get("/users", getAllUsers)
 
 // Add this route for admin to fetch all payments and reports
 app.get("/payments", getAllPayments)
 app.get("/reports", getAllReports)
+app.post("/postNotification", postNotification)
+app.get("/notifications", getAllNotifications)
 
 app.get("/", (req, res) => {
   console.log("req.body")

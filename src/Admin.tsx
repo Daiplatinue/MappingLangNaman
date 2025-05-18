@@ -253,6 +253,53 @@ function AdminDashboard() {
   const [reports, setReports] = useState<Report[]>([])
   const [fetchingReports, setFetchingReports] = useState(false)
 
+  // Add this type definition after the Report type (around line 230)
+  type Construction = {
+    _id?: string
+    block: string
+    houseId: string
+    type: string
+    start: Date
+    end: Date
+  }
+
+  // First, add a new type definition for notifications after the Construction type (around line 230)
+  type Notification = {
+    _id?: string
+    type: string
+    recipient: string
+    subject: string
+    message: string
+    priority: string
+    createdAt: Date
+  }
+
+  // Add these state variables after the reports state (around line 232)
+  const [constructions, setConstructions] = useState<Construction[]>([])
+  const [fetchingConstructions, setFetchingConstructions] = useState(false)
+
+  // Add state variables for notifications after the constructions state (around line 235)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [fetchingNotifications, setFetchingNotifications] = useState(false)
+
+  // Add a new type definition for User after the Notification type (around line 230):
+  type User = {
+    _id?: string
+    firstname: string
+    lastname: string
+    middlename?: string
+    email: string
+    contact: string
+    type: string
+    block?: string
+    houseId?: string
+    status: string
+  }
+
+  // Add these state variables after the notifications state (around line 235):
+  const [dbUsers, setDbUsers] = useState<User[]>([])
+  const [fetchingUsers, setFetchingUsers] = useState(false)
+
   // Function to fetch all payments for admin view
   const fetchAllPayments = async () => {
     try {
@@ -285,6 +332,54 @@ function AdminDashboard() {
     }
   }
 
+  // Add this function after the fetchAllReports function (around line 265)
+  const fetchAllConstructions = async () => {
+    try {
+      setFetchingConstructions(true)
+      const response = await axios.get("http://localhost:3000/constructions")
+      if (response.data) {
+        setConstructions(response.data)
+      }
+    } catch (error) {
+      console.error("Error fetching all constructions:", error)
+      toast.error("Failed to fetch construction data")
+    } finally {
+      setFetchingConstructions(false)
+    }
+  }
+
+  // Add a function to fetch all notifications after the fetchAllConstructions function (around line 280)
+  const fetchAllNotifications = async () => {
+    try {
+      setFetchingNotifications(true)
+      const response = await axios.get("http://localhost:3000/notifications")
+      if (response.data) {
+        setNotifications(response.data)
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error)
+      toast.error("Failed to fetch notifications")
+    } finally {
+      setFetchingNotifications(false)
+    }
+  }
+
+  // Add a function to fetch all users after the fetchAllNotifications function:
+  const fetchAllUsers = async () => {
+    try {
+      setFetchingUsers(true)
+      const response = await axios.get("http://localhost:3000/users")
+      if (response.data) {
+        setDbUsers(response.data)
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error)
+      toast.error("Failed to fetch users")
+    } finally {
+      setFetchingUsers(false)
+    }
+  }
+
   useEffect(() => {
     if (activeTab === "payments") {
       fetchAllPayments()
@@ -298,54 +393,39 @@ function AdminDashboard() {
     }
   }, [activeTab])
 
-  const [notificationsData, setNotificationsData] = useState([
-    {
-      id: 1,
-      date: "2024-04-25",
-      type: "Announcement",
-      subject: "Community Meeting",
-      recipients: "All Households",
-      priority: "Normal",
-      message: "Monthly community meeting will be held on Saturday at 10 AM in the community center.",
-    },
-    {
-      id: 2,
-      date: "2024-04-22",
-      type: "Maintenance",
-      subject: "Water System Maintenance",
-      recipients: "Block A, Block B",
-      priority: "High",
-      message:
-        "Water system maintenance will be conducted on April 23rd from 9 AM to 12 PM. Please store water accordingly.",
-    },
-    {
-      id: 3,
-      date: "2024-04-20",
-      type: "Payment",
-      subject: "Monthly Dues Reminder",
-      recipients: "All Households",
-      priority: "Normal",
-      message: "This is a reminder that monthly dues are due by the end of the month.",
-    },
-    {
-      id: 4,
-      date: "2024-04-15",
-      type: "Emergency",
-      subject: "Power Outage Alert",
-      recipients: "All Households",
-      priority: "Urgent",
-      message: "Emergency power outage reported in the area. Maintenance team is working to resolve the issue.",
-    },
-  ])
+  // Add this useEffect after the reports useEffect (around line 277)
+  useEffect(() => {
+    if (activeTab === "construction") {
+      fetchAllConstructions()
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    if (activeTab === "notifications") {
+      fetchAllNotifications()
+    }
+  }, [activeTab])
+
+  // Add a useEffect to load users when the users tab is active:
+  useEffect(() => {
+    if (activeTab === "users") {
+      fetchAllUsers()
+    }
+  }, [activeTab])
 
   const [incidentForm, setIncidentForm] = useState({
     blockId: "",
     householdId: "",
     type: "",
     description: "",
+    location: "",
+    witness: "",
+    severity: "Medium", // Default value
+    dateTime: new Date().toISOString(),
+    block: "", // Add block field
   })
 
-  const [isSubmittingIncident] = useState(false)
+  const [isSubmittingIncident, setIsSubmittingIncident] = useState(false)
 
   const [constructionForm, setConstructionForm] = useState({
     blockId: "",
@@ -455,25 +535,58 @@ function AdminDashboard() {
     toast.success("Household status updated successfully")
   }
 
-  const handleSendNotification = (notification: any) => {
-    const newId = notificationsData.length > 0 ? Math.max(...notificationsData.map((n) => n.id)) + 1 : 1
-    const newNotification = {
-      id: newId,
-      date: new Date().toISOString().split("T")[0],
+  // Update the handleSendNotification function to send notifications to the database (around line 450)
+  interface NotificationInput {
+    type: string
+    recipients: string
+    subject: string
+    message: string
+    priority: string
+  }
+
+  interface NewNotification {
+    type: string
+    recipient: string
+    subject: string
+    message: string
+    priority: string
+  }
+
+  const handleSendNotification = (notification: NotificationInput) => {
+    // Create a new notification object with the current date
+    const newNotification: NewNotification = {
       type: notification.type.charAt(0).toUpperCase() + notification.type.slice(1),
-      subject: notification.subject,
-      recipients:
+      recipient:
         notification.recipients === "all"
           ? "All Households"
-          : notification.recipients.replace(/-/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()),
-      priority: notification.priority.charAt(0).toUpperCase() + notification.priority.slice(1),
+          : notification.recipients.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+      subject: notification.subject,
       message: notification.message,
+      priority: notification.priority.charAt(0).toUpperCase() + notification.priority.slice(1),
     }
 
-    setNotificationsData([newNotification, ...notificationsData])
+    // Send the notification to the database
+    axios
+      .post("http://localhost:3000/postNotification", {
+        type: newNotification.type,
+        recipient: newNotification.recipient, // Changed from recepient to recipient
+        subject: newNotification.subject,
+        message: newNotification.message,
+        priority: newNotification.priority,
+      })
+      .then((response: { data: any }) => {
+        if (response.data) {
+          toast.success(`Notification sent to ${newNotification.recipient}`)
+          // Refresh notifications
+          fetchAllNotifications()
+        }
+      })
+      .catch((error: any) => {
+        console.error("Error sending notification:", error)
+        toast.error("Failed to send notification")
+      })
 
-    toast.success(`Notification sent to ${notification.recipients}`)
-
+    // Show browser notification if permissions are granted
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification(notification.subject, {
         body: notification.message,
@@ -922,660 +1035,669 @@ function AdminDashboard() {
             </div>
           </SidebarFooter>
         </Sidebar>
-
-        <div className="flex-1 flex justify-center">
-          <div className="w-full max-w-7xl">
-            <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10 w-full">
-              <div className="flex justify-between items-center py-4 px-4">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold">Admin Dashboard</h1>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input type="search" placeholder="Search..." className="w-[200px] pl-8 md:w-[300px]" />
-                  </div>
-                  <NotifyHouseholdDialog onSendNotification={handleSendNotification} />
-                  <Button variant="ghost" size="icon">
-                    <Bell className="h-5 w-5" />
-                  </Button>
-                </div>
+      </div>
+      <div className="flex-1 flex justify-center">
+        <div className="w-full max-w-7xl">
+          <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10 w-full">
+            <div className="flex justify-between items-center py-4 px-4">
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold">Admin Dashboard</h1>
               </div>
-            </header>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input type="search" placeholder="Search..." className="w-[200px] pl-8 md:w-[300px]" />
+                </div>
+                <NotifyHouseholdDialog onSendNotification={handleSendNotification} />
+                <Button variant="ghost" size="icon">
+                  <Bell className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </header>
 
-            <main className="w-full py-6 px-4">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 w-full">
-                {/* Dashboard Tab */}
-                <TabsContent value="dashboard" className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-4 w-full">
-                    <StatCard
-                      icon={<Building className="h-4 w-4 text-white" />}
-                      title="Total Blocks"
-                      value={totalBlocks}
-                      description="Total number of blocks in the subdivision"
-                      color="bg-blue-500"
-                    />
-                    <StatCard
-                      icon={<Home className="h-4 w-4 text-white" />}
-                      title="Total Households"
-                      value={totalHouseholds}
-                      description="Total number of households across all blocks"
-                      color="bg-green-500"
-                    />
-                    <StatCard
-                      icon={<AlertTriangle className="h-4 w-4 text-white" />}
-                      title="Total Incidents"
-                      value={totalIncidents}
-                      description="Reported incidents in the subdivision"
-                      color="bg-red-500"
-                    />
-                    <StatCard
-                      icon={<Construction className="h-4 w-4 text-white" />}
-                      title="Under Construction"
-                      value={totalUnderConstruction + totalUnderRenovation + totalUpcomingRenovation}
-                      description="Houses under construction or renovation"
-                      color="bg-orange-500"
-                    />
-                  </div>
+          <main className="w-full py-6 px-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 w-full">
+              {/* Dashboard Tab */}
+              <TabsContent value="dashboard" className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-4 w-full">
+                  <StatCard
+                    icon={<Building className="h-4 w-4 text-white" />}
+                    title="Total Blocks"
+                    value={totalBlocks}
+                    description="Total number of blocks in the subdivision"
+                    color="bg-blue-500"
+                  />
+                  <StatCard
+                    icon={<Home className="h-4 w-4 text-white" />}
+                    title="Total Households"
+                    value={totalHouseholds}
+                    description="Total number of households across all blocks"
+                    color="bg-green-500"
+                  />
+                  <StatCard
+                    icon={<AlertTriangle className="h-4 w-4 text-white" />}
+                    title="Total Incidents"
+                    value={totalIncidents}
+                    description="Reported incidents in the subdivision"
+                    color="bg-red-500"
+                  />
+                  <StatCard
+                    icon={<Construction className="h-4 w-4 text-white" />}
+                    title="Under Construction"
+                    value={totalUnderConstruction + totalUnderRenovation + totalUpcomingRenovation}
+                    description="Houses under construction or renovation"
+                    color="bg-orange-500"
+                  />
+                </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Utility Consumption Overview</CardTitle>
-                        <CardDescription>Total water and electricity consumption by block</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {blocksData.map((block) => (
-                            <div key={block.id} className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{block.name}</span>
-                                <span className="text-sm text-muted-foreground">
-                                  {block.totalHouseholds} households
-                                </span>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Utility Consumption Overview</CardTitle>
+                      <CardDescription>Total water and electricity consumption by block</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {blocksData.map((block) => (
+                          <div key={block.id} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{block.name}</span>
+                              <span className="text-sm text-muted-foreground">{block.totalHouseholds} households</span>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                  <Droplet className="h-4 w-4 text-blue-500" />
+                                  <span>Water</span>
+                                </div>
+                                <span>{block.waterConsumption} m³</span>
                               </div>
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <Droplet className="h-4 w-4 text-blue-500" />
-                                    <span>Water</span>
-                                  </div>
-                                  <span>{block.waterConsumption} m³</span>
-                                </div>
-                                <div className="h-2 w-full bg-blue-100 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-blue-500 rounded-full"
-                                    style={{ width: `${(block.waterConsumption / totalWaterConsumption) * 100}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <Zap className="h-4 w-4 text-yellow-500" />
-                                    <span>Electricity</span>
-                                  </div>
-                                  <span>{block.electricityConsumption} kWh</span>
-                                </div>
-                                <div className="h-2 w-full bg-yellow-100 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-yellow-500 rounded-full"
-                                    style={{
-                                      width: `${(block.electricityConsumption / totalElectricityConsumption) * 100}%`,
-                                    }}
-                                  ></div>
-                                </div>
+                              <div className="h-2 w-full bg-blue-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-blue-500 rounded-full"
+                                  style={{ width: `${(block.waterConsumption / totalWaterConsumption) * 100}%` }}
+                                ></div>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                  <Zap className="h-4 w-4 text-yellow-500" />
+                                  <span>Electricity</span>
+                                </div>
+                                <span>{block.electricityConsumption} kWh</span>
+                              </div>
+                              <div className="h-2 w-full bg-yellow-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-yellow-500 rounded-full"
+                                  style={{
+                                    width: `${(block.electricityConsumption / totalElectricityConsumption) * 100}%`,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Recent Incidents</CardTitle>
-                        <CardDescription>Latest reported incidents in the subdivision</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {incidentsData.slice(0, 4).map((incident) => (
-                            <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
-                              <div
-                                className={`p-2 rounded-full ${
-                                  incident.type === "Security"
-                                    ? "bg-red-100"
-                                    : incident.type === "Maintenance"
-                                      ? "bg-blue-100"
-                                      : incident.type === "Noise"
-                                        ? "bg-yellow-100"
-                                        : "bg-purple-100"
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recent Incidents</CardTitle>
+                      <CardDescription>Latest reported incidents in the subdivision</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {incidentsData.slice(0, 4).map((incident) => (
+                          <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
+                            <div
+                              className={`p-2 rounded-full ${incident.type === "Security"
+                                  ? "bg-red-100"
+                                  : incident.type === "Maintenance"
+                                    ? "bg-blue-100"
+                                    : incident.type === "Noise"
+                                      ? "bg-yellow-100"
+                                      : "bg-purple-100"
                                 }`}
-                              >
-                                <AlertTriangle
-                                  className={`h-4 w-4 ${
-                                    incident.type === "Security"
-                                      ? "text-red-500"
-                                      : incident.type === "Maintenance"
-                                        ? "text-blue-500"
-                                        : incident.type === "Noise"
-                                          ? "text-yellow-500"
-                                          : "text-purple-500"
+                            >
+                              <AlertTriangle
+                                className={`h-4 w-4 ${incident.type === "Security"
+                                    ? "text-red-500"
+                                    : incident.type === "Maintenance"
+                                      ? "text-blue-500"
+                                      : incident.type === "Noise"
+                                        ? "text-yellow-500"
+                                        : "text-purple-500"
                                   }`}
-                                />
+                              />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{incident.description}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {incident.type}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">{incident.date}</span>
+                                <Badge
+                                  className={
+                                    incident.status === "Resolved"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                  }
+                                >
+                                  {incident.status}
+                                </Badge>
                               </div>
-                              <div>
-                                <p className="font-medium text-sm">{incident.description}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {incident.type}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">{incident.date}</span>
-                                  <Badge
-                                    className={
-                                      incident.status === "Resolved"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-yellow-100 text-yellow-700"
-                                    }
-                                  >
-                                    {incident.status}
-                                  </Badge>
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {incident.blockId}-{incident.householdId}
-                                </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {incident.blockId}-{incident.householdId}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button variant="ghost" size="sm" className="w-full" onClick={() => setActiveTab("incidents")}>
-                          View All Incidents
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </div>
-                </TabsContent>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button variant="ghost" size="sm" className="w-full" onClick={() => setActiveTab("incidents")}>
+                        View All Incidents
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
+              </TabsContent>
 
-                {/* Blocks Tab */}
-                <TabsContent value="blocks" className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Blocks Management</h2>
+              {/* Blocks Tab */}
+              <TabsContent value="blocks" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Blocks Management</h2>
+                </div>
+                {view === "blocks" && (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {blocksData.map((block) => (
+                      <BlockCard
+                        key={block.id}
+                        block={block}
+                        onClick={handleBlockSelect}
+                        isActive={selectedBlock?.id === block.id}
+                      />
+                    ))}
                   </div>
-                  {view === "blocks" && (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                      {blocksData.map((block) => (
-                        <BlockCard
-                          key={block.id}
-                          block={block}
-                          onClick={handleBlockSelect}
-                          isActive={selectedBlock?.id === block.id}
+                )}
+
+                {view === "households" && selectedBlock && (
+                  <>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Button variant="ghost" size="sm" onClick={handleBack}>
+                        <ChevronDown className="h-4 w-4 rotate-90 mr-2" />
+                        Back to Blocks
+                      </Button>
+                      <h3 className="text-lg font-medium">
+                        {selectedBlock.name} - {filteredHouseholds.length} Households
+                      </h3>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {filteredHouseholds.map((household) => (
+                        <HouseholdCard
+                          key={household.id}
+                          household={household}
+                          onClick={handleHouseholdSelect}
+                          isActive={selectedHousehold?.id === household.id}
                         />
                       ))}
                     </div>
-                  )}
+                  </>
+                )}
 
-                  {view === "households" && selectedBlock && (
-                    <>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Button variant="ghost" size="sm" onClick={handleBack}>
-                          <ChevronDown className="h-4 w-4 rotate-90 mr-2" />
-                          Back to Blocks
-                        </Button>
-                        <h3 className="text-lg font-medium">
-                          {selectedBlock.name} - {filteredHouseholds.length} Households
-                        </h3>
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredHouseholds.map((household) => (
-                          <HouseholdCard
-                            key={household.id}
-                            household={household}
-                            onClick={handleHouseholdSelect}
-                            isActive={selectedHousehold?.id === household.id}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
+                {view === "household-details" && selectedHousehold && (
+                  <>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Button variant="ghost" size="sm" onClick={handleBack}>
+                        <ChevronDown className="h-4 w-4 rotate-90 mr-2" />
+                        Back to Households
+                      </Button>
+                      <h3 className="text-lg font-medium">
+                        Household {selectedHousehold.id} - {selectedHousehold.address}
+                      </h3>
+                    </div>
 
-                  {view === "household-details" && selectedHousehold && (
-                    <>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Button variant="ghost" size="sm" onClick={handleBack}>
-                          <ChevronDown className="h-4 w-4 rotate-90 mr-2" />
-                          Back to Households
-                        </Button>
-                        <h3 className="text-lg font-medium">
-                          Household {selectedHousehold.id} - {selectedHousehold.address}
-                        </h3>
-                      </div>
-
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Household Information</CardTitle>
-                            <CardDescription>{selectedHousehold.address}</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <div>
-                                <div className="space-y-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Block</span>
-                                    <span className="font-medium">{selectedHousehold.blockId}</span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">House ID</span>
-                                    <span className="font-medium">{selectedHousehold.id}</span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Status</span>
-                                    <div className="flex items-center gap-2">
-                                      <Badge
-                                        className={
-                                          selectedHousehold.status === "Under Renovation"
-                                            ? "bg-orange-100 text-orange-700"
-                                            : selectedHousehold.status === "Upcoming Renovation"
-                                              ? "bg-yellow-100 text-yellow-700"
-                                              : selectedHousehold.status === "Under Construction"
-                                                ? "bg-purple-100 text-purple-700"
-                                                : "bg-green-100 text-green-700"
-                                        }
-                                      >
-                                        {selectedHousehold.status}
-                                      </Badge>
-                                      <Dialog>
-                                        <DialogTrigger asChild>
-                                          <Button variant="outline" size="sm">
-                                            Change Status
-                                          </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                          <DialogHeader>
-                                            <DialogTitle>Update House Status</DialogTitle>
-                                            <DialogDescription>
-                                              Change the current status of {selectedHousehold.id} -{" "}
-                                              {selectedHousehold.address}
-                                            </DialogDescription>
-                                          </DialogHeader>
-                                          <div className="grid gap-4 py-4">
-                                            <div className="grid gap-2">
-                                              <Label htmlFor="status">Status</Label>
-                                              <Select
-                                                defaultValue={selectedHousehold.status}
-                                                onValueChange={setUpdatedStatus}
-                                              >
-                                                <SelectTrigger id="status">
-                                                  <SelectValue placeholder="Select status" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                  <SelectItem value="Occupied">Occupied</SelectItem>
-                                                  <SelectItem value="Under Renovation">Under Renovation</SelectItem>
-                                                  <SelectItem value="Upcoming Renovation">
-                                                    Upcoming Renovation
-                                                  </SelectItem>
-                                                  <SelectItem value="Under Construction">Under Construction</SelectItem>
-                                                  <SelectItem value="Upcoming Construction">
-                                                    Upcoming Construction
-                                                  </SelectItem>
-                                                </SelectContent>
-                                              </Select>
-                                            </div>
-                                            <div className="grid gap-2">
-                                              <Label htmlFor="start-date">Start Date (if applicable)</Label>
-                                              <Input
-                                                id="start-date"
-                                                type="date"
-                                                value={startDate}
-                                                onChange={(e) => setStartDate(e.target.value)}
-                                              />
-                                            </div>
-                                            <div className="grid gap-2">
-                                              <Label htmlFor="end-date">Expected End Date</Label>
-                                              <Input
-                                                id="end-date"
-                                                type="date"
-                                                value={endDate}
-                                                onChange={(e) => setEndDate(e.target.value)}
-                                              />
-                                            </div>
-                                          </div>
-                                          <DialogFooter>
-                                            <Button type="submit" onClick={handleUpdateHouseholdStatus}>
-                                              Update Status
-                                            </Button>
-                                          </DialogFooter>
-                                        </DialogContent>
-                                      </Dialog>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Occupants</span>
-                                    <span className="font-medium">{selectedHousehold.occupants}</span>
-                                  </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Household Information</CardTitle>
+                          <CardDescription>{selectedHousehold.address}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <div className="space-y-4">
+                                <div className="flex flex-col">
+                                  <span className="text-sm text-muted-foreground">Block</span>
+                                  <span className="font-medium">{selectedHousehold.blockId}</span>
                                 </div>
-                              </div>
-                              <div>
-                                <div className="space-y-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Water Consumption</span>
-                                    <div className="flex items-center gap-2">
-                                      <Droplet className="h-4 w-4 text-blue-500" />
-                                      <span className="font-medium">{selectedHousehold.waterConsumption} m³</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Electricity Consumption</span>
-                                    <div className="flex items-center gap-2">
-                                      <Zap className="h-4 w-4 text-yellow-500" />
-                                      <span className="font-medium">
-                                        {selectedHousehold.electricityConsumption} kWh
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm text-muted-foreground">Payment Status</span>
+                                <div className="flex flex-col">
+                                  <span className="text-sm text-muted-foreground">House ID</span>
+                                  <span className="font-medium">{selectedHousehold.id}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm text-muted-foreground">Status</span>
+                                  <div className="flex items-center gap-2">
                                     <Badge
                                       className={
-                                        selectedHousehold.paymentStatus === "Overdue"
+                                        selectedHousehold.status === "Under Renovation"
+                                          ? "bg-orange-100 text-orange-700"
+                                          : selectedHousehold.status === "Upcoming Renovation"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : selectedHousehold.status === "Under Construction"
+                                              ? "bg-purple-100 text-purple-700"
+                                              : "bg-green-100 text-green-700"
+                                      }
+                                    >
+                                      {selectedHousehold.status}
+                                    </Badge>
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm">
+                                          Change Status
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent>
+                                        <DialogHeader>
+                                          <DialogTitle>Update House Status</DialogTitle>
+                                          <DialogDescription>
+                                            Change the current status of {selectedHousehold.id} -{" "}
+                                            {selectedHousehold.address}
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                          <div className="grid gap-2">
+                                            <Label htmlFor="status">Status</Label>
+                                            <Select
+                                              defaultValue={selectedHousehold.status}
+                                              onValueChange={setUpdatedStatus}
+                                            >
+                                              <SelectTrigger id="status">
+                                                <SelectValue placeholder="Select status" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="Occupied">Occupied</SelectItem>
+                                                <SelectItem value="Under Renovation">Under Renovation</SelectItem>
+                                                <SelectItem value="Upcoming Renovation">Upcoming Renovation</SelectItem>
+                                                <SelectItem value="Under Construction">Under Construction</SelectItem>
+                                                <SelectItem value="Upcoming Construction">
+                                                  Upcoming Construction
+                                                </SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
+                                          <div className="grid gap-2">
+                                            <Label htmlFor="start-date">Start Date (if applicable)</Label>
+                                            <Input
+                                              id="start-date"
+                                              type="date"
+                                              value={startDate}
+                                              onChange={(e) => setStartDate(e.target.value)}
+                                            />
+                                          </div>
+                                          <div className="grid gap-2">
+                                            <Label htmlFor="end-date">Expected End Date</Label>
+                                            <Input
+                                              id="end-date"
+                                              type="date"
+                                              value={endDate}
+                                              onChange={(e) => setEndDate(e.target.value)}
+                                            />
+                                          </div>
+                                        </div>
+                                        <DialogFooter>
+                                          <Button type="submit" onClick={handleUpdateHouseholdStatus}>
+                                            Update Status
+                                          </Button>
+                                        </DialogFooter>
+                                      </DialogContent>
+                                    </Dialog>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm text-muted-foreground">Occupants</span>
+                                  <span className="font-medium">{selectedHousehold.occupants}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="space-y-4">
+                                <div className="flex flex-col">
+                                  <span className="text-sm text-muted-foreground">Water Consumption</span>
+                                  <div className="flex items-center gap-2">
+                                    <Droplet className="h-4 w-4 text-blue-500" />
+                                    <span className="font-medium">{selectedHousehold.waterConsumption} m³</span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm text-muted-foreground">Electricity Consumption</span>
+                                  <div className="flex items-center gap-2">
+                                    <Zap className="h-4 w-4 text-yellow-500" />
+                                    <span className="font-medium">{selectedHousehold.electricityConsumption} kWh</span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm text-muted-foreground">Payment Status</span>
+                                  <Badge
+                                    className={
+                                      selectedHousehold.paymentStatus === "Overdue"
+                                        ? "bg-red-100 text-red-700"
+                                        : selectedHousehold.paymentStatus === "N/A"
+                                          ? "bg-gray-100 text-gray-700"
+                                          : "bg-green-100 text-green-700"
+                                    }
+                                  >
+                                    {selectedHousehold.paymentStatus}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                        <CardFooter>
+                          <div className="flex gap-2 w-full">
+                            <Button variant="outline" className="flex-1">
+                              Edit Details
+                            </Button>
+                            <Button className="flex-1">Send Notification</Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Recent Activity</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {filteredIncidents.length > 0 ? (
+                              filteredIncidents.map((incident) => (
+                                <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
+                                  <div
+                                    className={`p-2 rounded-full ${incident.type === "Security"
+                                        ? "bg-red-100"
+                                        : incident.type === "Maintenance"
+                                          ? "bg-blue-100"
+                                          : incident.type === "Noise"
+                                            ? "bg-yellow-100"
+                                            : "bg-purple-100"
+                                      }`}
+                                  >
+                                    <AlertTriangle
+                                      className={`h-4 w-4 ${incident.type === "Security"
+                                          ? "text-red-500"
+                                          : incident.type === "Maintenance"
+                                            ? "text-blue-500"
+                                            : incident.type === "Noise"
+                                              ? "text-yellow-500"
+                                              : "text-purple-500"
+                                        }`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-sm">{incident.description}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge variant="outline" className="text-xs">
+                                        {incident.type}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">{incident.date}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center py-4 text-muted-foreground">
+                                No incidents reported for this household
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Payment History</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredPaymentLogs.length > 0 ? (
+                              filteredPaymentLogs.map((payment) => (
+                                <TableRow key={payment.id}>
+                                  <TableCell>{payment.date}</TableCell>
+                                  <TableCell>{payment.type}</TableCell>
+                                  <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      className={
+                                        payment.status === "Overdue"
                                           ? "bg-red-100 text-red-700"
-                                          : selectedHousehold.paymentStatus === "N/A"
+                                          : payment.status === "N/A"
                                             ? "bg-gray-100 text-gray-700"
                                             : "bg-green-100 text-green-700"
                                       }
                                     >
-                                      {selectedHousehold.paymentStatus}
+                                      {payment.status}
                                     </Badge>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                          <CardFooter>
-                            <div className="flex gap-2 w-full">
-                              <Button variant="outline" className="flex-1">
-                                Edit Details
-                              </Button>
-                              <Button className="flex-1">Send Notification</Button>
-                            </div>
-                          </CardFooter>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Recent Activity</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              {filteredIncidents.length > 0 ? (
-                                filteredIncidents.map((incident) => (
-                                  <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
-                                    <div
-                                      className={`p-2 rounded-full ${
-                                        incident.type === "Security"
-                                          ? "bg-red-100"
-                                          : incident.type === "Maintenance"
-                                            ? "bg-blue-100"
-                                            : incident.type === "Noise"
-                                              ? "bg-yellow-100"
-                                              : "bg-purple-100"
-                                      }`}
-                                    >
-                                      <AlertTriangle
-                                        className={`h-4 w-4 ${
-                                          incident.type === "Security"
-                                            ? "text-red-500"
-                                            : incident.type === "Maintenance"
-                                              ? "text-blue-500"
-                                              : incident.type === "Noise"
-                                                ? "text-yellow-500"
-                                                : "text-purple-500"
-                                        }`}
-                                      />
-                                    </div>
-                                    <div>
-                                      <p className="font-medium text-sm">{incident.description}</p>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <Badge variant="outline" className="text-xs">
-                                          {incident.type}
-                                        </Badge>
-                                        <span className="text-xs text-muted-foreground">{incident.date}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-center py-4 text-muted-foreground">
-                                  No incidents reported for this household
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Payment History</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {filteredPaymentLogs.length > 0 ? (
-                                filteredPaymentLogs.map((payment) => (
-                                  <TableRow key={payment.id}>
-                                    <TableCell>{payment.date}</TableCell>
-                                    <TableCell>{payment.type}</TableCell>
-                                    <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
-                                    <TableCell>
-                                      <Badge
-                                        className={
-                                          payment.status === "Overdue"
-                                            ? "bg-red-100 text-red-700"
-                                            : payment.status === "N/A"
-                                              ? "bg-gray-100 text-gray-700"
-                                              : "bg-green-100 text-green-700"
-                                        }
-                                      >
-                                        {payment.status}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      <Button variant="ghost" size="sm">
-                                        View
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))
-                              ) : (
-                                <TableRow>
-                                  <TableCell colSpan={5} className="text-center">
-                                    No payment records found
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button variant="ghost" size="sm">
+                                      View
+                                    </Button>
                                   </TableCell>
                                 </TableRow>
-                              )}
-                            </TableBody>
-                          </Table>
-                        </CardContent>
-                      </Card>
-                    </>
-                  )}
-                </TabsContent>
-
-                {/* Payments Tab */}
-                <TabsContent value="payments" className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Payment Logs</h2>
-                    <div className="flex items-center gap-2">
-                      <Select defaultValue="all">
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Filter by Block" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Blocks</SelectItem>
-                          {blocksData.map((block) => (
-                            <SelectItem key={block.id} value={block.id}>
-                              {block.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button variant="outline" className="gap-2">
-                        <Filter className="h-4 w-4" />
-                        Filter
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-medium">Payment History</h3>
-                        <Button variant="outline" size="sm" onClick={fetchAllPayments} disabled={fetchingPayments}>
-                          {fetchingPayments ? "Loading..." : "Refresh"}
-                        </Button>
-                      </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>User ID</TableHead>
-                            <TableHead>House ID</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Processing Fee</TableHead>
-                            <TableHead>Total</TableHead>
-                            <TableHead>Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {payments && payments.length > 0 ? (
-                            payments.map((payment, index) => (
-                              <TableRow key={payment._id || index}>
-                                <TableCell>{new Date(payment.paymentDate).toLocaleDateString()}</TableCell>
-                                <TableCell>{payment.userId}</TableCell>
-                                <TableCell>{payment.houseId}</TableCell>
-                                <TableCell>{payment.paymentType}</TableCell>
-                                <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
-                                <TableCell>₱{payment.processingFee.toLocaleString()}</TableCell>
-                                <TableCell>₱{payment.totalAmount.toLocaleString()}</TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={
-                                      payment.status === "completed"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-yellow-100 text-yellow-700"
-                                    }
-                                  >
-                                    {payment.status}
-                                  </Badge>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={5} className="text-center">
+                                  No payment records found
                                 </TableCell>
                               </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={8} className="text-center py-4">
-                                {fetchingPayments ? "Loading payments..." : "No payment records found"}
+                            )}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* Payments Tab */}
+              <TabsContent value="payments" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Payment Logs</h2>
+                  <div className="flex items-center gap-2">
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by Block" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Blocks</SelectItem>
+                        {blocksData.map((block) => (
+                          <SelectItem key={block.id} value={block.id}>
+                            {block.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" className="gap-2">
+                      <Filter className="h-4 w-4" />
+                      Filter
+                    </Button>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-medium">Payment History</h3>
+                      <Button variant="outline" size="sm" onClick={fetchAllPayments} disabled={fetchingPayments}>
+                        {fetchingPayments ? "Loading..." : "Refresh"}
+                      </Button>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>User ID</TableHead>
+                          <TableHead>House ID</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Processing Fee</TableHead>
+                          <TableHead>Total</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {payments && payments.length > 0 ? (
+                          payments.map((payment, index) => (
+                            <TableRow key={payment._id || index}>
+                              <TableCell>{new Date(payment.paymentDate).toLocaleDateString()}</TableCell>
+                              <TableCell>{payment.userId}</TableCell>
+                              <TableCell>{payment.houseId}</TableCell>
+                              <TableCell>{payment.paymentType}</TableCell>
+                              <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
+                              <TableCell>₱{payment.processingFee.toLocaleString()}</TableCell>
+                              <TableCell>₱{payment.totalAmount.toLocaleString()}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    payment.status === "completed"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                  }
+                                >
+                                  {payment.status}
+                                </Badge>
                               </TableCell>
                             </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-4">
+                              {fetchingPayments ? "Loading payments..." : "No payment records found"}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                {/* Incidents Tab */}
-                <TabsContent value="incidents" className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Incidents</h2>
-                    <div className="flex items-center gap-2">
-                      <Select defaultValue="all">
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Filter by Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Statuses</SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
-                          <SelectItem value="in-progress">In Progress</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {/* Replace the incident form dialog content with this updated version that uses state
-                      // Find the incident form in the "Incidents Tab" section (around line 1600) */}
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Add Incident
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Report New Incident</DialogTitle>
-                            <DialogDescription>
-                              Fill in the details to report a new incident in the subdivision.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="incident-block">Block</Label>
-                                <Select
-                                  value={incidentForm.blockId}
-                                  onValueChange={(value) => setIncidentForm({ ...incidentForm, blockId: value })}
-                                >
-                                  <SelectTrigger id="incident-block">
-                                    <SelectValue placeholder="Select block" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {blocksData.map((block) => (
-                                      <SelectItem key={block.id} value={block.id}>
-                                        {block.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="grid gap-2">
-                                <Label htmlFor="incident-household">Household</Label>
-                                <Select
-                                  value={incidentForm.householdId}
-                                  onValueChange={(value) => setIncidentForm({ ...incidentForm, householdId: value })}
-                                  disabled={!incidentForm.blockId}
-                                >
-                                  <SelectTrigger id="incident-household">
-                                    <SelectValue
-                                      placeholder={incidentForm.blockId ? "Select household" : "Select a block first"}
-                                    />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {incidentForm.blockId ? (
-                                      householdsData
-                                        .filter((household) => household.blockId === incidentForm.blockId)
-                                        .map((household) => (
-                                          <SelectItem key={household.id} value={household.id}>
-                                            {household.id} - {household.address}
-                                          </SelectItem>
-                                        ))
-                                    ) : (
-                                      <SelectItem value="placeholder" disabled>
-                                        Select a block first
-                                      </SelectItem>
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                              </div>
+              {/* Incidents Tab */}
+              <TabsContent value="incidents" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Incidents</h2>
+                  <div className="flex items-center gap-2">
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add Incident
+                        </Button>
+                      </DialogTrigger>
+                      {/* Now update the incident dialog form in the incidents tab
+                        // Find the Dialog content for adding an incident (around line 1200) and replace it with: */}
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Report New Incident</DialogTitle>
+                          <DialogDescription>
+                            Fill in the details to report a new incident in the subdivision.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="incident-block">Block</Label>
+                              <Select
+                                value={incidentForm.block}
+                                onValueChange={(value) => setIncidentForm({ ...incidentForm, block: value })}
+                              >
+                                <SelectTrigger id="incident-block">
+                                  <SelectValue placeholder="Select block" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {blocksData.map((block) => (
+                                    <SelectItem key={block.id} value={block.name}>
+                                      {block.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="incident-blockId">Block ID</Label>
+                              <Select
+                                value={incidentForm.blockId}
+                                onValueChange={(value) => setIncidentForm({ ...incidentForm, blockId: value })}
+                              >
+                                <SelectTrigger id="incident-blockId">
+                                  <SelectValue placeholder="Select block ID" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {blocksData.map((block) => (
+                                    <SelectItem key={block.id} value={block.id}>
+                                      {block.id}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="incident-household">Household ID</Label>
+                              <Select
+                                value={incidentForm.householdId}
+                                onValueChange={(value) => setIncidentForm({ ...incidentForm, householdId: value })}
+                                disabled={!incidentForm.blockId}
+                              >
+                                <SelectTrigger id="incident-household">
+                                  <SelectValue
+                                    placeholder={incidentForm.blockId ? "Select household" : "Select a block first"}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {incidentForm.blockId ? (
+                                    householdsData
+                                      .filter((household) => household.blockId === incidentForm.blockId)
+                                      .map((household) => (
+                                        <SelectItem key={household.id} value={household.id}>
+                                          {household.id} - {household.address}
+                                        </SelectItem>
+                                      ))
+                                  ) : (
+                                    <SelectItem value="placeholder" disabled>
+                                      Select a block first
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="incident-type">Incident Type</Label>
@@ -1595,221 +1717,830 @@ function AdminDashboard() {
                                 </SelectContent>
                               </Select>
                             </div>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="incident-location">Location</Label>
+                            <Input
+                              id="incident-location"
+                              placeholder="Specific location of the incident"
+                              value={incidentForm.location}
+                              onChange={(e) => setIncidentForm({ ...incidentForm, location: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="incident-description">Description</Label>
+                            <Textarea
+                              id="incident-description"
+                              placeholder="Describe the incident..."
+                              rows={4}
+                              value={incidentForm.description}
+                              onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                              <Label htmlFor="incident-description">Description</Label>
-                              <Textarea
-                                id="incident-description"
-                                placeholder="Describe the incident..."
-                                rows={4}
-                                value={incidentForm.description}
-                                onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })}
+                              <Label htmlFor="incident-witness">Witness (Optional)</Label>
+                              <Input
+                                id="incident-witness"
+                                placeholder="Name of witness if any"
+                                value={incidentForm.witness}
+                                onChange={(e) => setIncidentForm({ ...incidentForm, witness: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="incident-severity">Severity</Label>
+                              <Select
+                                value={incidentForm.severity}
+                                onValueChange={(value) => setIncidentForm({ ...incidentForm, severity: value })}
+                              >
+                                <SelectTrigger id="incident-severity">
+                                  <SelectValue placeholder="Select severity" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Low">Low</SelectItem>
+                                  <SelectItem value="Medium">Medium</SelectItem>
+                                  <SelectItem value="High">High</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            type="submit"
+                            disabled={isSubmittingIncident}
+                            onClick={async () => {
+                              // Validate required fields
+                              if (
+                                !incidentForm.type ||
+                                !incidentForm.householdId ||
+                                !incidentForm.description ||
+                                !incidentForm.location
+                              ) {
+                                toast.error("Please fill all required fields")
+                                return
+                              }
+
+                              setIsSubmittingIncident(true)
+                              try {
+                                // Create payload with only filled fields
+                                const payload: any = {
+                                  type: incidentForm.type,
+                                  dateTime: incidentForm.dateTime,
+                                  desc: incidentForm.description,
+                                  location: incidentForm.location,
+                                  houseId: incidentForm.householdId,
+                                  severity: incidentForm.severity,
+                                  requester: "Admin", // Set requester as Admin
+                                }
+
+                                // Only add witness if it's provided
+                                if (incidentForm.witness.trim()) {
+                                  payload.witness = incidentForm.witness
+                                }
+
+                                // Add block if provided
+                                if (incidentForm.block) {
+                                  payload.block = incidentForm.block
+                                }
+
+                                const response = await axios.post("http://localhost:3000/postReport", payload)
+
+                                if (response.data) {
+                                  toast.success("Incident reported successfully")
+                                  // Reset form
+                                  setIncidentForm({
+                                    blockId: "",
+                                    householdId: "",
+                                    type: "",
+                                    description: "",
+                                    location: "",
+                                    witness: "",
+                                    severity: "Medium",
+                                    dateTime: new Date().toISOString(),
+                                    block: "",
+                                  })
+
+                                  // Refresh reports
+                                  fetchAllReports()
+
+                                  // Close dialog
+                                  const dialogElement = document.querySelector('[role="dialog"]')
+                                  if (dialogElement) {
+                                    const closeEvent = new KeyboardEvent("keydown", { key: "Escape" })
+                                    dialogElement.dispatchEvent(closeEvent)
+                                  }
+                                }
+                              } catch (error) {
+                                console.error("Error reporting incident:", error)
+                                toast.error("Failed to report incident")
+                              } finally {
+                                setIsSubmittingIncident(false)
+                              }
+                            }}
+                          >
+                            {isSubmittingIncident ? "Submitting..." : "Submit Report"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-medium">Incident Reports</h3>
+                      <Button variant="outline" size="sm" onClick={fetchAllReports} disabled={fetchingReports}>
+                        {fetchingReports ? "Loading..." : "Refresh"}
+                      </Button>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>House ID</TableHead>
+                          <TableHead>Location</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Severity</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reports && reports.length > 0 ? (
+                          reports.map((report, index) => (
+                            <TableRow key={report._id || index}>
+                              <TableCell>{new Date(report.dateTime).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{report.type}</Badge>
+                              </TableCell>
+                              <TableCell>{report.houseId}</TableCell>
+                              <TableCell>{report.location}</TableCell>
+                              <TableCell className="max-w-[200px] truncate">{report.desc}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    report.severity === "High"
+                                      ? "bg-red-100 text-red-700"
+                                      : report.severity === "Medium"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-blue-100 text-blue-700"
+                                  }
+                                >
+                                  {report.severity}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    report.status === "Resolved"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                  }
+                                >
+                                  {report.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      View
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Incident Report Details</DialogTitle>
+                                      <DialogDescription>
+                                        Reported on {new Date(report.dateTime).toLocaleString()}
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="py-4">
+                                      <div className="grid grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                          <h4 className="text-sm font-medium mb-1">Type</h4>
+                                          <Badge variant="outline">{report.type}</Badge>
+                                        </div>
+                                        <div>
+                                          <h4 className="text-sm font-medium mb-1">Severity</h4>
+                                          <Badge
+                                            className={
+                                              report.severity === "High"
+                                                ? "bg-red-100 text-red-700"
+                                                : report.severity === "Medium"
+                                                  ? "bg-yellow-100 text-yellow-700"
+                                                  : "bg-blue-100 text-blue-700"
+                                            }
+                                          >
+                                            {report.severity}
+                                          </Badge>
+                                        </div>
+                                        <div>
+                                          <h4 className="text-sm font-medium mb-1">House ID</h4>
+                                          <p>{report.houseId}</p>
+                                        </div>
+                                        <div>
+                                          <h4 className="text-sm font-medium mb-1">Location</h4>
+                                          <p>{report.location}</p>
+                                        </div>
+                                        <div>
+                                          <h4 className="text-sm font-medium mb-1">Reported By</h4>
+                                          <p>{report.requester}</p>
+                                        </div>
+                                        <div>
+                                          <h4 className="text-sm font-medium mb-1">Witness</h4>
+                                          <p>{report.witness}</p>
+                                        </div>
+                                        <div>
+                                          <h4 className="text-sm font-medium mb-1">Status</h4>
+                                          <Select
+                                            defaultValue={report.status}
+                                            onValueChange={(value) => {
+                                              // Here you would update the status in the database
+                                              toast.success(`Status updated to ${value}`)
+                                            }}
+                                          >
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="In Progress">In Progress</SelectItem>
+                                              <SelectItem value="Under Investigation">Under Investigation</SelectItem>
+                                              <SelectItem value="Resolved">Resolved</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <h4 className="text-sm font-medium mb-1">Description</h4>
+                                        <p className="text-sm">{report.desc}</p>
+                                      </div>
+                                    </div>
+                                    <DialogFooter>
+                                      <Button variant="outline">Assign Staff</Button>
+                                      <Button>Update Status</Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-4">
+                              {fetchingReports ? "Loading incidents..." : "No incident reports found"}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Construction Tab */}
+              <TabsContent value="construction" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Construction & Renovation</h2>
+                  <div className="flex items-center gap-2">
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="under-renovation">Under Renovation</SelectItem>
+                        <SelectItem value="upcoming-renovation">Upcoming Renovation</SelectItem>
+                        <SelectItem value="under-construction">Under Construction</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add Construction
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add New Construction/Renovation</DialogTitle>
+                          <DialogDescription>Register a new construction or renovation project</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="construction-block">Block</Label>
+                              <Select
+                                value={constructionForm.blockId}
+                                onValueChange={(value) => setConstructionForm({ ...constructionForm, blockId: value })}
+                              >
+                                <SelectTrigger id="construction-block">
+                                  <SelectValue placeholder="Select block" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {blocksData.map((block) => (
+                                    <SelectItem key={block.id} value={block.id}>
+                                      {block.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="construction-household">Household</Label>
+                              <Select
+                                value={constructionForm.householdId}
+                                onValueChange={(value) =>
+                                  setConstructionForm({ ...constructionForm, householdId: value })
+                                }
+                                disabled={!constructionForm.blockId}
+                              >
+                                <SelectTrigger id="construction-household">
+                                  <SelectValue
+                                    placeholder={constructionForm.blockId ? "Select household" : "Select a block first"}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {constructionForm.blockId ? (
+                                    householdsData
+                                      .filter((household) => household.blockId === constructionForm.blockId)
+                                      .map((household) => (
+                                        <SelectItem key={household.id} value={household.id}>
+                                          {household.id} - {household.address}
+                                        </SelectItem>
+                                      ))
+                                  ) : (
+                                    <SelectItem value="placeholder" disabled>
+                                      Select a block first
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="construction-type">Construction Type</Label>
+                            <Select
+                              value={constructionForm.status}
+                              onValueChange={(value) => setConstructionForm({ ...constructionForm, status: value })}
+                            >
+                              <SelectTrigger id="construction-type">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Under Renovation">Under Renovation</SelectItem>
+                                <SelectItem value="Upcoming Renovation">Upcoming Renovation</SelectItem>
+                                <SelectItem value="Under Construction">Under Construction</SelectItem>
+                                <SelectItem value="Upcoming Construction">Upcoming Construction</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="construction-start">Start Date</Label>
+                              <Input
+                                id="construction-start"
+                                type="date"
+                                value={constructionForm.startDate}
+                                onChange={(e) =>
+                                  setConstructionForm({ ...constructionForm, startDate: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="construction-end">Expected End Date</Label>
+                              <Input
+                                id="construction-end"
+                                type="date"
+                                value={constructionForm.endDate}
+                                onChange={(e) => setConstructionForm({ ...constructionForm, endDate: e.target.value })}
                               />
                             </div>
                           </div>
-                          <DialogFooter>
-                            <Button type="submit" disabled={isSubmittingIncident} onClick={async () => {}}></Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
-
-                  <Card>
-                    // Replace the incidents table in the Incidents Tab with this updated version // Find the Card
-                    component in the Incidents Tab section (around line 1900) // and replace its CardContent with this:
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-medium">Incident Reports</h3>
-                        <Button variant="outline" size="sm" onClick={fetchAllReports} disabled={fetchingReports}>
-                          {fetchingReports ? "Loading..." : "Refresh"}
-                        </Button>
-                      </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>House ID</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Severity</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {reports && reports.length > 0 ? (
-                            reports.map((report, index) => (
-                              <TableRow key={report._id || index}>
-                                <TableCell>{new Date(report.dateTime).toLocaleDateString()}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">{report.type}</Badge>
-                                </TableCell>
-                                <TableCell>{report.houseId}</TableCell>
-                                <TableCell>{report.location}</TableCell>
-                                <TableCell className="max-w-[200px] truncate">{report.desc}</TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={
-                                      report.severity === "High"
-                                        ? "bg-red-100 text-red-700"
-                                        : report.severity === "Medium"
-                                          ? "bg-yellow-100 text-yellow-700"
-                                          : "bg-blue-100 text-blue-700"
-                                    }
-                                  >
-                                    {report.severity}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={
-                                      report.status === "Resolved"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-yellow-100 text-yellow-700"
-                                    }
-                                  >
-                                    {report.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button variant="ghost" size="sm">
-                                        View
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>Incident Report Details</DialogTitle>
-                                        <DialogDescription>
-                                          Reported on {new Date(report.dateTime).toLocaleString()}
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      <div className="py-4">
-                                        <div className="grid grid-cols-2 gap-4 mb-4">
-                                          <div>
-                                            <h4 className="text-sm font-medium mb-1">Type</h4>
-                                            <Badge variant="outline">{report.type}</Badge>
-                                          </div>
-                                          <div>
-                                            <h4 className="text-sm font-medium mb-1">Severity</h4>
-                                            <Badge
-                                              className={
-                                                report.severity === "High"
-                                                  ? "bg-red-100 text-red-700"
-                                                  : report.severity === "Medium"
-                                                    ? "bg-yellow-100 text-yellow-700"
-                                                    : "bg-blue-100 text-blue-700"
-                                              }
-                                            >
-                                              {report.severity}
-                                            </Badge>
-                                          </div>
-                                          <div>
-                                            <h4 className="text-sm font-medium mb-1">House ID</h4>
-                                            <p>{report.houseId}</p>
-                                          </div>
-                                          <div>
-                                            <h4 className="text-sm font-medium mb-1">Location</h4>
-                                            <p>{report.location}</p>
-                                          </div>
-                                          <div>
-                                            <h4 className="text-sm font-medium mb-1">Reported By</h4>
-                                            <p>{report.requester}</p>
-                                          </div>
-                                          <div>
-                                            <h4 className="text-sm font-medium mb-1">Witness</h4>
-                                            <p>{report.witness}</p>
-                                          </div>
-                                          <div>
-                                            <h4 className="text-sm font-medium mb-1">Status</h4>
-                                            <Select
-                                              defaultValue={report.status}
-                                              onValueChange={(value) => {
-                                                // Here you would update the status in the database
-                                                toast.success(`Status updated to ${value}`)
-                                              }}
-                                            >
-                                              <SelectTrigger>
-                                                <SelectValue placeholder="Select status" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="In Progress">In Progress</SelectItem>
-                                                <SelectItem value="Under Investigation">Under Investigation</SelectItem>
-                                                <SelectItem value="Resolved">Resolved</SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                        </div>
-                                        <div>
-                                          <h4 className="text-sm font-medium mb-1">Description</h4>
-                                          <p className="text-sm">{report.desc}</p>
-                                        </div>
-                                      </div>
-                                      <DialogFooter>
-                                        <Button variant="outline">Assign Staff</Button>
-                                        <Button>Update Status</Button>
-                                      </DialogFooter>
-                                    </DialogContent>
-                                  </Dialog>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={8} className="text-center py-4">
-                                {fetchingReports ? "Loading incidents..." : "No incident reports found"}
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* Construction Tab */}
-                <TabsContent value="construction" className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Construction & Renovation</h2>
-                    <div className="flex items-center gap-2">
-                      <Select defaultValue="all">
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Filter by Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Statuses</SelectItem>
-                          <SelectItem value="under-renovation">Under Renovation</SelectItem>
-                          <SelectItem value="upcoming-renovation">Upcoming Renovation</SelectItem>
-                          <SelectItem value="under-construction">Under Construction</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {/* Replace the construction form dialog content with this updated version that uses state
-                      // Find the construction form in the "Construction Tab" section (around line 1800) */}
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Add Construction
+                        </div>
+                        {constructionError && <div className="text-red-500 text-sm mt-2">{constructionError}</div>}
+                        <DialogFooter>
+                          <Button type="submit" onClick={handleAddConstruction} disabled={isAddingConstruction}>
+                            {isAddingConstruction ? "Adding..." : "Add Construction"}
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add New Construction/Renovation</DialogTitle>
-                            <DialogDescription>Register a new construction or renovation project</DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="construction-block">Block</Label>
-                                <Select
-                                  value={constructionForm.blockId}
-                                  onValueChange={(value) =>
-                                    setConstructionForm({ ...constructionForm, blockId: value })
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-medium">Construction & Renovation Projects</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchAllConstructions}
+                        disabled={fetchingConstructions}
+                      >
+                        {fetchingConstructions ? "Loading..." : "Refresh"}
+                      </Button>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Block</TableHead>
+                          <TableHead>Household ID</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Start Date</TableHead>
+                          <TableHead>End Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {constructions && constructions.length > 0 ? (
+                          constructions.map((construction, index) => (
+                            <TableRow key={construction._id || index}>
+                              <TableCell>{construction.block}</TableCell>
+                              <TableCell>{construction.houseId}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    construction.type === "Under Renovation"
+                                      ? "bg-orange-100 text-orange-700"
+                                      : construction.type === "Upcoming Renovation"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-purple-100 text-purple-700"
                                   }
                                 >
-                                  <SelectTrigger id="construction-block">
+                                  {construction.type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{new Date(construction.start).toLocaleDateString()}</TableCell>
+                              <TableCell>{new Date(construction.end).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                {new Date() < new Date(construction.start) ? (
+                                  <Badge className="bg-blue-100 text-blue-700">Upcoming</Badge>
+                                ) : new Date() > new Date(construction.end) ? (
+                                  <Badge className="bg-green-100 text-green-700">Completed</Badge>
+                                ) : (
+                                  <Badge className="bg-orange-100 text-orange-700">In Progress</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="sm">
+                                  View
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-4">
+                              {fetchingConstructions ? "Loading construction data..." : "No construction records found"}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Security Tab */}
+              <TabsContent value="security" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Security Management</h2>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" className="gap-2">
+                      <Filter className="h-4 w-4" />
+                      Filter
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Assign Guard
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Assign Guard to Security Position</DialogTitle>
+                          <DialogDescription>Select a guard and assign them to a security position</DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="guard">Select Guard</Label>
+                            <Select
+                              onValueChange={(value) => {
+                                setSelectedGuardId(Number.parseInt(value))
+                              }}
+                            >
+                              <SelectTrigger id="guard">
+                                <SelectValue placeholder="Select a guard" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {usersData
+                                  .filter((user) => user.userType === "guard")
+                                  .map((guard) => (
+                                    <SelectItem key={guard.id} value={guard.id.toString()}>
+                                      {guard.firstName} {guard.lastName}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="grid gap-2">
+                            <Label htmlFor="location">Location</Label>
+                            <Select
+                              onValueChange={(value) => {
+                                // Store the selected location in a state variable
+                                setSelectedLocation(value)
+                              }}
+                            >
+                              <SelectTrigger id="location">
+                                <SelectValue placeholder="Select location" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Main Entrance">Main Entrance</SelectItem>
+                                <SelectItem value="Exit 1">Exit 1</SelectItem>
+                                <SelectItem value="Exit 2">Exit 2</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="grid gap-2">
+                            <Label htmlFor="shift">Shift</Label>
+                            <Select
+                              onValueChange={(value) => {
+                                setSelectedShift(value)
+                              }}
+                            >
+                              <SelectTrigger id="shift">
+                                <SelectValue placeholder="Select shift" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Morning (6AM-2PM)">Morning (6AM-2PM)</SelectItem>
+                                <SelectItem value="Evening (2PM-10PM)">Evening (2PM-10PM)</SelectItem>
+                                <SelectItem value="Night (10PM-6AM)">Night (10PM-6AM)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            onClick={() => {
+                              if (!selectedGuardId || !selectedLocation || !selectedShift) {
+                                toast.error("Please select all fields")
+                                return
+                              }
+                              handleAssignGuard(selectedGuardId, selectedLocation, selectedShift)
+                            }}
+                          >
+                            Assign Guard
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Main Entrance</CardTitle>
+                      <CardDescription>Security assignments</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {securityAssignmentsData
+                          .filter((s) => s.location === "Main Entrance")
+                          .map((assignment) => (
+                            <div
+                              key={assignment.id}
+                              className="flex items-center justify-between pb-4 border-b last:border-0"
+                            >
+                              <div>
+                                <p className="font-medium">{assignment.guard}</p>
+                                <p className="text-sm text-muted-foreground">{assignment.shift}</p>
+                              </div>
+                              <Badge
+                                className={
+                                  assignment.status === "On Duty"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }
+                              >
+                                {assignment.status}
+                              </Badge>
+                            </div>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Exit 1</CardTitle>
+                      <CardDescription>Security assignments</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {securityAssignmentsData
+                          .filter((s) => s.location === "Exit 1")
+                          .map((assignment) => (
+                            <div
+                              key={assignment.id}
+                              className="flex items-center justify-between pb-4 border-b last:border-0"
+                            >
+                              <div>
+                                <p className="font-medium">{assignment.guard}</p>
+                                <p className="text-sm text-muted-foreground">{assignment.shift}</p>
+                              </div>
+                              <Badge
+                                className={
+                                  assignment.status === "On Duty"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }
+                              >
+                                {assignment.status}
+                              </Badge>
+                            </div>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Exit 2</CardTitle>
+                      <CardDescription>Security assignments</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {securityAssignmentsData
+                          .filter((s) => s.location === "Exit 2")
+                          .map((assignment) => (
+                            <div
+                              key={assignment.id}
+                              className="flex items-center justify-between pb-4 border-b last:border-0"
+                            >
+                              <div>
+                                <p className="font-medium">{assignment.guard}</p>
+                                <p className="text-sm text-muted-foreground">{assignment.shift}</p>
+                              </div>
+                              <Badge
+                                className={
+                                  assignment.status === "On Duty"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }
+                              >
+                                {assignment.status}
+                              </Badge>
+                            </div>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <Card>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-2">Available Guards</h4>
+                        <div className="space-y-2">
+                          {guardsData.map((guard) => (
+                            <div key={guard.u_id} className="flex items-center justify-between p-3 border rounded-md">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback>
+                                    {guard.u_fn?.charAt(0) || ""}
+                                    {guard.u_ln?.charAt(0) || ""}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <span className="font-medium">
+                                    {guard.u_fn} {guard.u_ln}
+                                  </span>
+                                  <span className="text-xs block text-muted-foreground">{guard.u_email}</span>
+                                </div>
+                              </div>
+                              <Badge variant="outline">Guard</Badge>
+                            </div>
+                          ))}
+                          {guardsData.length === 0 && (
+                            <div className="text-center py-4 text-muted-foreground">No guards available</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              {/* Add the following TabsContent before the closing Tabs tag */}
+              <TabsContent value="users" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">User Management</h2>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" className="gap-2">
+                      <Filter className="h-4 w-4" />
+                      Filter
+                    </Button>
+                    <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add User
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                          <DialogTitle>Add New User</DialogTitle>
+                          <DialogDescription>
+                            Enter the details for the new user to add to the system.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="firstName">First Name</Label>
+                              <Input
+                                id="firstName"
+                                name="firstName"
+                                placeholder="First Name"
+                                value={userValues.firstname}
+                                onChange={(e) => setUserValues({ ...userValues, firstname: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="lastName">Last Name</Label>
+                              <Input
+                                id="lastName"
+                                name="lastName"
+                                placeholder="Last Name"
+                                value={userValues.lastname}
+                                onChange={(e) => setUserValues({ ...userValues, lastname: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="middleName">Middle Name (Optional)</Label>
+                            <Input
+                              id="middleName"
+                              name="middleName"
+                              placeholder="Middle Name"
+                              value={userValues.middlename}
+                              onChange={(e) => setUserValues({ ...userValues, middlename: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                              id="email"
+                              name="email"
+                              type="email"
+                              placeholder="Email"
+                              value={userValues.email}
+                              onChange={(e) => setUserValues({ ...userValues, email: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="contact">Contact</Label>
+                            <Input
+                              id="contact"
+                              name="contact"
+                              type="text"
+                              placeholder="Contact"
+                              value={userValues.contact}
+                              onChange={(e) => setUserValues({ ...userValues, contact: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="userType">User Type</Label>
+                            <Select
+                              value={userValues.type}
+                              onValueChange={(value) => setUserValues({ ...userValues, type: value })}
+                            >
+                              <SelectTrigger id="userType">
+                                <SelectValue placeholder="Select user type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="customer">Customer</SelectItem>
+                                <SelectItem value="guard">Guard</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {userValues.type === "customer" && (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="blockId">Block</Label>
+                                <Select
+                                  value={userValues.block}
+                                  onValueChange={(value) => setUserValues({ ...userValues, block: value })}
+                                >
+                                  <SelectTrigger id="blockId">
                                     <SelectValue placeholder="Select block" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1822,565 +2553,179 @@ function AdminDashboard() {
                                 </Select>
                               </div>
                               <div className="grid gap-2">
-                                <Label htmlFor="construction-household">Household</Label>
+                                <Label htmlFor="householdId">Household ID</Label>
                                 <Select
-                                  value={constructionForm.householdId}
-                                  onValueChange={(value) =>
-                                    setConstructionForm({ ...constructionForm, householdId: value })
-                                  }
-                                  disabled={!constructionForm.blockId}
+                                  value={userValues.houseId}
+                                  onValueChange={(value) => setUserValues({ ...userValues, houseId: value })}
+                                  disabled={!userValues.block}
                                 >
-                                  <SelectTrigger id="construction-household">
-                                    <SelectValue
-                                      placeholder={
-                                        constructionForm.blockId ? "Select household" : "Select a block first"
-                                      }
-                                    />
+                                  <SelectTrigger id="householdId">
+                                    <SelectValue placeholder="Select household" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {constructionForm.blockId ? (
-                                      householdsData
-                                        .filter((household) => household.blockId === constructionForm.blockId)
-                                        .map((household) => (
-                                          <SelectItem key={household.id} value={household.id}>
-                                            {household.id} - {household.address}
-                                          </SelectItem>
-                                        ))
-                                    ) : (
-                                      <SelectItem value="placeholder" disabled>
-                                        Select a block first
-                                      </SelectItem>
-                                    )}
+                                    {userValues.block &&
+                                      getAvailableHouseholds(userValues.block).map((household) => (
+                                        <SelectItem key={household.id} value={household.id}>
+                                          {household.id} - {household.occupants} occupant(s)
+                                        </SelectItem>
+                                      ))}
                                   </SelectContent>
                                 </Select>
                               </div>
                             </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="construction-type">Construction Type</Label>
-                              <Select
-                                value={constructionForm.status}
-                                onValueChange={(value) => setConstructionForm({ ...constructionForm, status: value })}
-                              >
-                                <SelectTrigger id="construction-type">
-                                  <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Under Renovation">Under Renovation</SelectItem>
-                                  <SelectItem value="Upcoming Renovation">Upcoming Renovation</SelectItem>
-                                  <SelectItem value="Under Construction">Under Construction</SelectItem>
-                                  <SelectItem value="Upcoming Construction">Upcoming Construction</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="construction-start">Start Date</Label>
-                                <Input
-                                  id="construction-start"
-                                  type="date"
-                                  value={constructionForm.startDate}
-                                  onChange={(e) =>
-                                    setConstructionForm({ ...constructionForm, startDate: e.target.value })
-                                  }
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label htmlFor="construction-end">Expected End Date</Label>
-                                <Input
-                                  id="construction-end"
-                                  type="date"
-                                  value={constructionForm.endDate}
-                                  onChange={(e) =>
-                                    setConstructionForm({ ...constructionForm, endDate: e.target.value })
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          {constructionError && <div className="text-red-500 text-sm mt-2">{constructionError}</div>}
-                          <DialogFooter>
-                            <Button type="submit" onClick={handleAddConstruction} disabled={isAddingConstruction}>
-                              {isAddingConstruction ? "Adding..." : "Add Construction"}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
-
-                  <Card>
-                    <CardContent className="pt-6">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Household ID</TableHead>
-                            <TableHead>Address</TableHead>
-                            <TableHead>Block</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Start Date</TableHead>
-                            <TableHead>End Date</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {householdsData
-                            .filter((h) =>
-                              ["Under Renovation", "Upcoming Renovation", "Under Construction"].includes(h.status),
-                            )
-                            .map((household) => (
-                              <TableRow key={household.id}>
-                                <TableCell>{household.id}</TableCell>
-                                <TableCell>{household.address}</TableCell>
-                                <TableCell>Block {household.blockId}</TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={
-                                      household.status === "Under Renovation"
-                                        ? "bg-orange-100 text-orange-700"
-                                        : household.status === "Upcoming Renovation"
-                                          ? "bg-yellow-100 text-yellow-700"
-                                          : "bg-purple-100 text-purple-700"
-                                    }
-                                  >
-                                    {household.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>2023-04-15</TableCell>
-                                <TableCell>2023-06-30</TableCell>
-                                <TableCell className="text-right">
-                                  <Button variant="ghost" size="sm">
-                                    View
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                {/* Security Tab */}
-                <TabsContent value="security" className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Security Management</h2>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" className="gap-2">
-                        <Filter className="h-4 w-4" />
-                        Filter
-                      </Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Assign Guard
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Assign Guard to Security Position</DialogTitle>
-                            <DialogDescription>Select a guard and assign them to a security position</DialogDescription>
-                          </DialogHeader>
-                          <div className="py-4 space-y-4">
-                            <div className="grid gap-2">
-                              <Label htmlFor="guard">Select Guard</Label>
-                              <Select
-                                onValueChange={(value) => {
-                                  setSelectedGuardId(Number.parseInt(value))
-                                }}
-                              >
-                                <SelectTrigger id="guard">
-                                  <SelectValue placeholder="Select a guard" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {usersData
-                                    .filter((user) => user.userType === "guard")
-                                    .map((guard) => (
-                                      <SelectItem key={guard.id} value={guard.id.toString()}>
-                                        {guard.firstName} {guard.lastName}
-                                      </SelectItem>
-                                    ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="grid gap-2">
-                              <Label htmlFor="location">Location</Label>
-                              <Select
-                                onValueChange={(value) => {
-                                  // Store the selected location in a state variable
-                                  setSelectedLocation(value)
-                                }}
-                              >
-                                <SelectTrigger id="location">
-                                  <SelectValue placeholder="Select location" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Main Entrance">Main Entrance</SelectItem>
-                                  <SelectItem value="Exit 1">Exit 1</SelectItem>
-                                  <SelectItem value="Exit 2">Exit 2</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="grid gap-2">
-                              <Label htmlFor="shift">Shift</Label>
-                              <Select
-                                onValueChange={(value) => {
-                                  setSelectedShift(value)
-                                }}
-                              >
-                                <SelectTrigger id="shift">
-                                  <SelectValue placeholder="Select shift" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Morning (6AM-2PM)">Morning (6AM-2PM)</SelectItem>
-                                  <SelectItem value="Evening (2PM-10PM)">Evening (2PM-10PM)</SelectItem>
-                                  <SelectItem value="Night (10PM-6AM)">Night (10PM-6AM)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button
-                              onClick={() => {
-                                if (!selectedGuardId || !selectedLocation || !selectedShift) {
-                                  toast.error("Please select all fields")
-                                  return
-                                }
-                                handleAssignGuard(selectedGuardId, selectedLocation, selectedShift)
-                              }}
+                          )}
+                          {/* Add a status field to the Add User dialog form, right after the user type selection: */}
+                          <div className="grid gap-2">
+                            <Label htmlFor="userStatus">Status</Label>
+                            <Select
+                              value={userValues.status}
+                              onValueChange={(value) => setUserValues({ ...userValues, status: value })}
                             >
-                              Assign Guard
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                              <SelectTrigger id="userStatus">
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Active">Active</SelectItem>
+                                <SelectItem value="Pending">Pending</SelectItem>
+                                <SelectItem value="Inactive">Inactive</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit" onClick={handleCreateUser} disabled={loading}>
+                            {loading ? "Adding..." : "Add User"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-medium">User Management</h3>
+                      <Button variant="outline" size="sm" onClick={fetchAllUsers} disabled={fetchingUsers}>
+                        {fetchingUsers ? "Loading..." : "Refresh"}
+                      </Button>
                     </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Main Entrance</CardTitle>
-                        <CardDescription>Security assignments</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {securityAssignmentsData
-                            .filter((s) => s.location === "Main Entrance")
-                            .map((assignment) => (
-                              <div
-                                key={assignment.id}
-                                className="flex items-center justify-between pb-4 border-b last:border-0"
-                              >
-                                <div>
-                                  <p className="font-medium">{assignment.guard}</p>
-                                  <p className="text-sm text-muted-foreground">{assignment.shift}</p>
-                                </div>
-                                <Badge
-                                  className={
-                                    assignment.status === "On Duty"
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-gray-100 text-gray-700"
-                                  }
-                                >
-                                  {assignment.status}
-                                </Badge>
-                              </div>
-                            ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Exit 1</CardTitle>
-                        <CardDescription>Security assignments</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {securityAssignmentsData
-                            .filter((s) => s.location === "Exit 1")
-                            .map((assignment) => (
-                              <div
-                                key={assignment.id}
-                                className="flex items-center justify-between pb-4 border-b last:border-0"
-                              >
-                                <div>
-                                  <p className="font-medium">{assignment.guard}</p>
-                                  <p className="text-sm text-muted-foreground">{assignment.shift}</p>
-                                </div>
-                                <Badge
-                                  className={
-                                    assignment.status === "On Duty"
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-gray-100 text-gray-700"
-                                  }
-                                >
-                                  {assignment.status}
-                                </Badge>
-                              </div>
-                            ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Exit 2</CardTitle>
-                        <CardDescription>Security assignments</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {securityAssignmentsData
-                            .filter((s) => s.location === "Exit 2")
-                            .map((assignment) => (
-                              <div
-                                key={assignment.id}
-                                className="flex items-center justify-between pb-4 border-b last:border-0"
-                              >
-                                <div>
-                                  <p className="font-medium">{assignment.guard}</p>
-                                  <p className="text-sm text-muted-foreground">{assignment.shift}</p>
-                                </div>
-                                <Badge
-                                  className={
-                                    assignment.status === "On Duty"
-                                      ? "bg-green-100 text-green-700"
-                                      : "bg-gray-100 text-gray-700"
-                                  }
-                                >
-                                  {assignment.status}
-                                </Badge>
-                              </div>
-                            ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  <Card>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="mt-4">
-                          <h4 className="font-medium mb-2">Available Guards</h4>
-                          <div className="space-y-2">
-                            {guardsData.map((guard) => (
-                              <div key={guard.u_id} className="flex items-center justify-between p-3 border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>Block</TableHead>
+                          <TableHead>Household</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {fetchingUsers ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-4">
+                              Loading users...
+                            </TableCell>
+                          </TableRow>
+                        ) : dbUsers && dbUsers.length > 0 ? (
+                          dbUsers.map((user, index) => (
+                            <TableRow key={user._id || index}>
+                              <TableCell>
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback>
-                                      {guard.u_fn?.charAt(0) || ""}
-                                      {guard.u_ln?.charAt(0) || ""}
+                                      {user.firstname.charAt(0)}
+                                      {user.lastname.charAt(0)}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div>
                                     <span className="font-medium">
-                                      {guard.u_fn} {guard.u_ln}
+                                      {user.firstname} {user.lastname}
                                     </span>
-                                    <span className="text-xs block text-muted-foreground">{guard.u_email}</span>
+                                    {user.middlename && (
+                                      <span className="text-xs text-muted-foreground ml-1">({user.middlename})</span>
+                                    )}
                                   </div>
                                 </div>
-                                <Badge variant="outline">Guard</Badge>
-                              </div>
-                            ))}
-                            {guardsData.length === 0 && (
-                              <div className="text-center py-4 text-muted-foreground">No guards available</div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                {/* Add the following TabsContent before the closing Tabs tag */}
-                <TabsContent value="users" className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">User Management</h2>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" className="gap-2">
-                        <Filter className="h-4 w-4" />
-                        Filter
-                      </Button>
-                      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-                        <DialogTrigger asChild>
-                          <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Add User
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px]">
-                          <DialogHeader>
-                            <DialogTitle>Add New User</DialogTitle>
-                            <DialogDescription>
-                              Enter the details for the new user to add to the system.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="firstName">First Name</Label>
-                                <Input
-                                  id="firstName"
-                                  name="firstName"
-                                  placeholder="First Name"
-                                  value={userValues.firstname}
-                                  onChange={(e) => setUserValues({ ...userValues, firstname: e.target.value })}
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label htmlFor="lastName">Last Name</Label>
-                                <Input
-                                  id="lastName"
-                                  name="lastName"
-                                  placeholder="Last Name"
-                                  value={userValues.lastname}
-                                  onChange={(e) => setUserValues({ ...userValues, lastname: e.target.value })}
-                                />
-                              </div>
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="middleName">Middle Name (Optional)</Label>
-                              <Input
-                                id="middleName"
-                                name="middleName"
-                                placeholder="Middle Name"
-                                value={userValues.middlename}
-                                onChange={(e) => setUserValues({ ...userValues, middlename: e.target.value })}
-                              />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="email">Email</Label>
-                              <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                placeholder="Email"
-                                value={userValues.email}
-                                onChange={(e) => setUserValues({ ...userValues, email: e.target.value })}
-                              />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="contact">Contact</Label>
-                              <Input
-                                id="contact"
-                                name="contact"
-                                type="text"
-                                placeholder="Contact"
-                                value={userValues.contact}
-                                onChange={(e) => setUserValues({ ...userValues, contact: e.target.value })}
-                              />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="userType">User Type</Label>
-                              <Select
-                                value={userValues.type}
-                                onValueChange={(value) => setUserValues({ ...userValues, type: value })}
-                              >
-                                <SelectTrigger id="userType">
-                                  <SelectValue placeholder="Select user type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="customer">Customer</SelectItem>
-                                  <SelectItem value="guard">Guard</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            {userValues.type === "customer" && (
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                  <Label htmlFor="blockId">Block</Label>
-                                  <Select
-                                    value={userValues.block}
-                                    onValueChange={(value) => setUserValues({ ...userValues, block: value })}
-                                  >
-                                    <SelectTrigger id="blockId">
-                                      <SelectValue placeholder="Select block" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {blocksData.map((block) => (
-                                        <SelectItem key={block.id} value={block.id}>
-                                          {block.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                              </TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>
+                                <Badge variant={user.type === "guard" ? "secondary" : "default"}>
+                                  {user.type === "guard" ? "Guard" : "Customer"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={
+                                    user.status === "Active"
+                                      ? "bg-green-100 text-green-700"
+                                      : user.status === "Pending"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-gray-100 text-gray-700"
+                                  }
+                                >
+                                  {user.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{user.contact}</TableCell>
+                              <TableCell>{user.block ? `Block ${user.block}` : "-"}</TableCell>
+                              <TableCell>{user.houseId || (user.type === "guard" ? "N/A" : "Unassigned")}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="ghost" size="sm">
+                                    <MessageSquare className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm">
+                                    <Info className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                                <div className="grid gap-2">
-                                  <Label htmlFor="householdId">Household ID</Label>
-                                  <Select
-                                    value={userValues.houseId}
-                                    onValueChange={(value) => setUserValues({ ...userValues, houseId: value })}
-                                    disabled={!userValues.block}
-                                  >
-                                    <SelectTrigger id="householdId">
-                                      <SelectValue placeholder="Select household" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {userValues.block &&
-                                        getAvailableHouseholds(userValues.block).map((household) => (
-                                          <SelectItem key={household.id} value={household.id}>
-                                            {household.id} - {household.occupants} occupant(s)
-                                          </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            )}
-                            {/* Add a status field to the Add User dialog form, right after the user type selection: */}
-                            <div className="grid gap-2">
-                              <Label htmlFor="userStatus">Status</Label>
-                              <Select
-                                value={userValues.status}
-                                onValueChange={(value) => setUserValues({ ...userValues, status: value })}
-                              >
-                                <SelectTrigger id="userStatus">
-                                  <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Active">Active</SelectItem>
-                                  <SelectItem value="Pending">Pending</SelectItem>
-                                  <SelectItem value="Inactive">Inactive</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-                          </div>
-                          <DialogFooter>
-                            <Button type="submit" onClick={handleCreateUser} disabled={loading}>
-                              {loading ? "Adding..." : "Add User"}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
-
-                  <Card>
-                    <CardContent className="pt-6">
-                      <Table>
-                        <TableHeader>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
                           <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Contact</TableHead>
-                            <TableHead>Block</TableHead>
-                            <TableHead>Household</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableCell colSpan={8} className="text-center py-4">
+                              No users found
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {usersData.map((user) => (
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+                {/* Add a new Card component for Pending Accounts in the users tab, right after the existing Card with the user table. Place this code before the Household Management Card: */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pending Accounts</CardTitle>
+                    <CardDescription>Review and approve new user registrations</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>Date Registered</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {usersData
+                          .filter((user) => user.status === "Pending")
+                          .map((user) => (
                             <TableRow key={user.id}>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback>
-                                      {user.firstName.charAt(0)}
-                                      {user.lastName.charAt(0)}
+                                      {user.firstName?.charAt(0) || ""}
+                                      {user.lastName?.charAt(0) || ""}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div>
@@ -2399,334 +2744,256 @@ function AdminDashboard() {
                                   {user.userType === "guard" ? "Guard" : "Customer"}
                                 </Badge>
                               </TableCell>
-                              {/* Add a status badge to the user table to show each user's status. Find the user table row and add this after the Type column: */}
-                              <TableCell>
-                                <Badge
-                                  className={
-                                    user.status === "Active"
-                                      ? "bg-green-100 text-green-700"
-                                      : user.status === "Pending"
-                                        ? "bg-yellow-100 text-yellow-700"
-                                        : "bg-gray-100 text-gray-700"
-                                  }
-                                >
-                                  {user.status || "Active"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{user.referralCode}</TableCell>
-                              <TableCell>{user.blockId ? `Block ${user.blockId}` : "-"}</TableCell>
-                              <TableCell>
-                                {user.householdId || (user.userType === "guard" ? "N/A" : "Unassigned")}
-                              </TableCell>
+                              <TableCell>{user.referralCode || user.contact}</TableCell>
+                              <TableCell>{new Date().toLocaleDateString()}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="ghost" size="sm">
-                                    <MessageSquare className="h-4 w-4" />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      // Update user status to Active
+                                      const updatedUsers = usersData.map((u) =>
+                                        u.id === user.id ? { ...u, status: "Active" } : u,
+                                      )
+                                      setUsersData(updatedUsers)
+                                      toast.success(`${user.firstName} ${user.lastName} has been approved`)
+                                    }}
+                                  >
+                                    Approve
                                   </Button>
-                                  <Button variant="ghost" size="sm">
-                                    <Info className="h-4 w-4" />
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => {
+                                      // Remove user from the list
+                                      setUsersData(usersData.filter((u) => u.id !== user.id))
+                                      toast.success(`${user.firstName} ${user.lastName} has been rejected`)
+                                    }}
+                                  >
+                                    Reject
                                   </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
                           ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                  {/* Add a new Card component for Pending Accounts in the users tab, right after the existing Card with the user table. Place this code before the Household Management Card: */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Pending Accounts</CardTitle>
-                      <CardDescription>Review and approve new user registrations</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <Table>
-                        <TableHeader>
+                        {!usersData.some((user) => user.status === "Pending") && (
                           <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Contact</TableHead>
-                            <TableHead>Date Registered</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                              No pending accounts to review
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {usersData
-                            .filter((user) => user.status === "Pending")
-                            .map((user) => (
-                              <TableRow key={user.id}>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarFallback>
-                                        {user.firstName?.charAt(0) || ""}
-                                        {user.lastName?.charAt(0) || ""}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <span className="font-medium">
-                                        {user.firstName} {user.lastName}
-                                      </span>
-                                      {user.middleName && (
-                                        <span className="text-xs text-muted-foreground ml-1">({user.middleName})</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>
-                                  <Badge variant={user.userType === "guard" ? "secondary" : "default"}>
-                                    {user.userType === "guard" ? "Guard" : "Customer"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{user.referralCode || user.contact}</TableCell>
-                                <TableCell>{new Date().toLocaleDateString()}</TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        // Update user status to Active
-                                        const updatedUsers = usersData.map((u) =>
-                                          u.id === user.id ? { ...u, status: "Active" } : u,
-                                        )
-                                        setUsersData(updatedUsers)
-                                        toast.success(`${user.firstName} ${user.lastName} has been approved`)
-                                      }}
-                                    >
-                                      Approve
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => {
-                                        // Remove user from the list
-                                        setUsersData(usersData.filter((u) => u.id !== user.id))
-                                        toast.success(`${user.firstName} ${user.lastName} has been rejected`)
-                                      }}
-                                    >
-                                      Reject
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          {!usersData.some((user) => user.status === "Pending") && (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                                No pending accounts to review
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Household Management</CardTitle>
-                      <CardDescription>Manage household occupants and assignments</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button className="w-full">
-                            <Home className="h-4 w-4 mr-2" />
-                            Manage Household Occupants
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl">
-                          <DialogHeader>
-                            <DialogTitle>Household Occupants</DialogTitle>
-                            <DialogDescription>View and manage occupants assigned to households</DialogDescription>
-                          </DialogHeader>
-                          <div className="py-4">
-                            <div className="grid gap-4">
-                              <div>
-                                <Label className="mb-2 block">Select Block</Label>
-                                <Select
-                                  value={selectedBlock?.id || ""}
-                                  onValueChange={(value) => {
-                                    const block = blocksData.find((b) => b.id === value)
-                                    setSelectedBlock(block)
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a block" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {blocksData.map((block) => (
-                                      <SelectItem key={block.id} value={block.id}>
-                                        {block.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Household Management</CardTitle>
+                    <CardDescription>Manage household occupants and assignments</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="w-full">
+                          <Home className="h-4 w-4 mr-2" />
+                          Manage Household Occupants
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                          <DialogTitle>Household Occupants</DialogTitle>
+                          <DialogDescription>View and manage occupants assigned to households</DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                          <div className="grid gap-4">
+                            <div>
+                              <Label className="mb-2 block">Select Block</Label>
+                              <Select
+                                value={selectedBlock?.id || ""}
+                                onValueChange={(value) => {
+                                  const block = blocksData.find((b) => b.id === value)
+                                  setSelectedBlock(block)
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a block" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {blocksData.map((block) => (
+                                    <SelectItem key={block.id} value={block.id}>
+                                      {block.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
 
-                                {selectedBlock && (
-                                  <div className="mt-4">
-                                    <h4 className="font-medium mb-2">Households in {selectedBlock.name}</h4>
-                                    <div className="grid gap-2 max-h-[400px] overflow-y-auto">
-                                      {getAvailableHouseholds(selectedBlock.id).map((household) => {
-                                        const occupants = usersData.filter(
-                                          (user) => user.householdId === household.id && user.userType === "customer",
-                                        )
-                                        const householdData = householdsData.find((h) => h.id === household.id)
+                              {selectedBlock && (
+                                <div className="mt-4">
+                                  <h4 className="font-medium mb-2">Households in {selectedBlock.name}</h4>
+                                  <div className="grid gap-2 max-h-[400px] overflow-y-auto">
+                                    {getAvailableHouseholds(selectedBlock.id).map((household) => {
+                                      const occupants = usersData.filter(
+                                        (user) => user.householdId === household.id && user.userType === "customer",
+                                      )
+                                      const householdData = householdsData.find((h) => h.id === household.id)
 
-                                        return (
-                                          <Card
-                                            key={household.id}
-                                            className={`p-3 ${household.status !== "Occupied" && household.status !== "Available" ? "bg-gray-50" : ""}`}
-                                          >
-                                            <div className="flex justify-between items-center">
-                                              <div>
-                                                <div className="flex items-center">
-                                                  <span className="font-medium">{household.id}</span>
-                                                  {householdData && householdData.status !== "Occupied" && (
-                                                    <Badge variant="outline" className="ml-2 text-xs">
-                                                      {householdData.status}
-                                                    </Badge>
-                                                  )}
-                                                </div>
-                                                <span className="text-sm text-muted-foreground block">
-                                                  {occupants.length} occupant{occupants.length !== 1 ? "s" : ""}
-                                                </span>
-                                                {occupants.length > 0 && (
-                                                  <div className="mt-1 text-xs text-muted-foreground">
-                                                    {occupants.map((u) => `${u.firstName} ${u.lastName}`).join(", ")}
-                                                  </div>
+                                      return (
+                                        <Card
+                                          key={household.id}
+                                          className={`p-3 ${household.status !== "Occupied" && household.status !== "Available" ? "bg-gray-50" : ""}`}
+                                        >
+                                          <div className="flex justify-between items-center">
+                                            <div>
+                                              <div className="flex items-center">
+                                                <span className="font-medium">{household.id}</span>
+                                                {householdData && householdData.status !== "Occupied" && (
+                                                  <Badge variant="outline" className="ml-2 text-xs">
+                                                    {householdData.status}
+                                                  </Badge>
                                                 )}
                                               </div>
-                                              <Dialog>
-                                                <DialogTrigger asChild>
-                                                  <Button variant="outline" size="sm">
-                                                    <UserPlus className="h-4 w-4 mr-2" />
-                                                    Assign
-                                                  </Button>
-                                                </DialogTrigger>
-                                                <DialogContent>
-                                                  <DialogHeader>
-                                                    <DialogTitle>Assign Occupants to {household.id}</DialogTitle>
-                                                    <DialogDescription>
-                                                      Select users to assign to this household
-                                                    </DialogDescription>
-                                                  </DialogHeader>
-                                                  <div className="py-4">
-                                                    <div className="max-h-[300px] overflow-y-auto border rounded-md">
-                                                      {usersData
-                                                        .filter((user) => user.userType === "customer") // Only show customers
-                                                        .map((user) => (
-                                                          <div
-                                                            key={user.id}
-                                                            className="flex items-center justify-between p-3 border-b last:border-0"
-                                                          >
-                                                            <div className="flex items-center gap-2">
-                                                              <Avatar className="h-8 w-8">
-                                                                <AvatarFallback>
-                                                                  {user.firstName.charAt(0)}
-                                                                  {user.lastName.charAt(0)}
-                                                                </AvatarFallback>
-                                                              </Avatar>
-                                                              <div>
-                                                                <span className="font-medium">
-                                                                  {user.firstName} {user.lastName}
-                                                                </span>
-                                                                <span className="text-xs block text-muted-foreground">
-                                                                  {user.email}
-                                                                </span>
-                                                                {user.householdId &&
-                                                                  user.householdId !== household.id && (
-                                                                    <span className="text-xs text-amber-600">
-                                                                      Currently assigned to {user.householdId}
-                                                                    </span>
-                                                                  )}
-                                                              </div>
-                                                            </div>
-                                                            <Button
-                                                              variant={
-                                                                user.householdId === household.id
-                                                                  ? "default"
-                                                                  : "outline"
-                                                              }
-                                                              size="sm"
-                                                              onClick={() =>
-                                                                handleAssignUser(
-                                                                  user.id,
-                                                                  selectedBlock.id,
-                                                                  household.id,
-                                                                )
-                                                              }
-                                                            >
-                                                              {user.householdId === household.id
-                                                                ? "Assigned"
-                                                                : "Assign"}
-                                                            </Button>
-                                                          </div>
-                                                        ))}
-                                                    </div>
-                                                  </div>
-                                                </DialogContent>
-                                              </Dialog>
+                                              <span className="text-sm text-muted-foreground block">
+                                                {occupants.length} occupant{occupants.length !== 1 ? "s" : ""}
+                                              </span>
+                                              {occupants.length > 0 && (
+                                                <div className="mt-1 text-xs text-muted-foreground">
+                                                  {occupants.map((u) => `${u.firstName} ${u.lastName}`).join(", ")}
+                                                </div>
+                                              )}
                                             </div>
-                                          </Card>
-                                        )
-                                      })}
-                                    </div>
+                                            <Dialog>
+                                              <DialogTrigger asChild>
+                                                <Button variant="outline" size="sm">
+                                                  <UserPlus className="h-4 w-4 mr-2" />
+                                                  Assign
+                                                </Button>
+                                              </DialogTrigger>
+                                              <DialogContent>
+                                                <DialogHeader>
+                                                  <DialogTitle>Assign Occupants to {household.id}</DialogTitle>
+                                                  <DialogDescription>
+                                                    Select users to assign to this household
+                                                  </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="py-4">
+                                                  <div className="max-h-[300px] overflow-y-auto border rounded-md">
+                                                    {usersData
+                                                      .filter((user) => user.userType === "customer") // Only show customers
+                                                      .map((user) => (
+                                                        <div
+                                                          key={user.id}
+                                                          className="flex items-center justify-between p-3 border-b last:border-0"
+                                                        >
+                                                          <div className="flex items-center gap-2">
+                                                            <Avatar className="h-8 w-8">
+                                                              <AvatarFallback>
+                                                                {user.firstName.charAt(0)}
+                                                                {user.lastName.charAt(0)}
+                                                              </AvatarFallback>
+                                                            </Avatar>
+                                                            <div>
+                                                              <span className="font-medium">
+                                                                {user.firstName} {user.lastName}
+                                                              </span>
+                                                              <span className="text-xs block text-muted-foreground">
+                                                                {user.email}
+                                                              </span>
+                                                              {user.householdId &&
+                                                                user.householdId !== household.id && (
+                                                                  <span className="text-xs text-amber-600">
+                                                                    Currently assigned to {user.householdId}
+                                                                  </span>
+                                                                )}
+                                                            </div>
+                                                          </div>
+                                                          <Button
+                                                            variant={
+                                                              user.householdId === household.id ? "default" : "outline"
+                                                            }
+                                                            size="sm"
+                                                            onClick={() =>
+                                                              handleAssignUser(user.id, selectedBlock.id, household.id)
+                                                            }
+                                                          >
+                                                            {user.householdId === household.id ? "Assigned" : "Assign"}
+                                                          </Button>
+                                                        </div>
+                                                      ))}
+                                                  </div>
+                                                </div>
+                                              </DialogContent>
+                                            </Dialog>
+                                          </div>
+                                        </Card>
+                                      )
+                                    })}
                                   </div>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </DialogContent>
-                      </Dialog>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="notifications" className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Notifications</h2>
-                    <div className="flex items-center gap-2">
-                      <Select defaultValue="all">
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Filter by Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Types</SelectItem>
-                          <SelectItem value="announcement">Announcements</SelectItem>
-                          <SelectItem value="maintenance">Maintenance</SelectItem>
-                          <SelectItem value="payment">Payment</SelectItem>
-                          <SelectItem value="emergency">Emergency</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="notifications" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Notifications</h2>
+                  <div className="flex items-center gap-2">
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="announcement">Announcements</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="payment">Payment</SelectItem>
+                        <SelectItem value="emergency">Emergency</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
 
-                  <Card>
-                    <CardContent className="pt-6">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Subject</TableHead>
-                            <TableHead>Recipients</TableHead>
-                            <TableHead>Priority</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {notificationsData.map((notification) => (
-                            <TableRow key={notification.id}>
-                              <TableCell>{notification.date}</TableCell>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-medium">Notifications</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchAllNotifications}
+                        disabled={fetchingNotifications}
+                      >
+                        {fetchingNotifications ? "Loading..." : "Refresh"}
+                      </Button>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Subject</TableHead>
+                          <TableHead>Recipients</TableHead>
+                          <TableHead>Priority</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {notifications && notifications.length > 0 ? (
+                          notifications.map((notification, index) => (
+                            <TableRow key={notification._id || index}>
+                              <TableCell>{new Date(notification.createdAt).toLocaleDateString()}</TableCell>
                               <TableCell>
                                 <Badge variant="outline">{notification.type}</Badge>
                               </TableCell>
                               <TableCell>{notification.subject}</TableCell>
-                              <TableCell>{notification.recipients}</TableCell>
+                              <TableCell>{notification.recipient}</TableCell>
                               <TableCell>
                                 <Badge
                                   className={
@@ -2753,7 +3020,8 @@ function AdminDashboard() {
                                     <DialogHeader>
                                       <DialogTitle>{notification.subject}</DialogTitle>
                                       <DialogDescription>
-                                        Sent on {notification.date} to {notification.recipients}
+                                        Sent on {new Date(notification.createdAt).toLocaleString()} to{" "}
+                                        {notification.recipient}
                                       </DialogDescription>
                                     </DialogHeader>
                                     <div className="py-4">
@@ -2779,15 +3047,21 @@ function AdminDashboard() {
                                 </Dialog>
                               </TableCell>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </main>
-          </div>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-4">
+                              {fetchingNotifications ? "Loading notifications..." : "No notifications found"}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </main>
         </div>
       </div>
     </SidebarProvider>
@@ -2807,18 +3081,24 @@ const NotifyHouseholdDialog = ({ onSendNotification }: { onSendNotification: (no
       return
     }
 
-    onSendNotification({
+    // Create notification object
+    const notification = {
       type: notificationType,
       recipients,
       subject,
       message,
       priority,
-    })
+    }
 
+    // Send to parent component for API call
+    onSendNotification(notification)
+
+    // Reset form
     setSubject("")
     setMessage("")
     setPriority("normal")
 
+    // Close dialog
     document
       .querySelector('[role="dialog"]')
       ?.closest('div[data-state="open"]')

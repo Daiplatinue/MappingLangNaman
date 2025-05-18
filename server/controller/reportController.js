@@ -1,32 +1,33 @@
 import { Report } from "../models/report.js"
-import { User } from "../models/user.js"
 
 // Function to create a new report
 const postReport = async (req, res) => {
   try {
-    const { title, description, assignedTo } = req.body
-    const requester = req.userId // Assuming userId is attached to the request during authentication
+    const { type, dateTime, desc, location, witness, severity, requester, houseId, block, status } = req.body
 
-    // Validate input
-    if (!title || !description || !assignedTo) {
+    // Validate required fields
+    if (!type || !dateTime || !desc || !location || !severity || !houseId) {
       return res.status(400).json({ message: "Please provide all required fields." })
     }
 
-    // Check if the assigned user exists
-    const assignedUser = await User.findById(assignedTo)
-    if (!assignedUser) {
-      return res.status(404).json({ message: "Assigned user not found." })
+    // Create new report with only provided fields
+    const reportData = {
+      type,
+      dateTime,
+      desc,
+      location,
+      severity,
+      houseId,
+      requester: requester || "Admin", // Default to Anonymous if not provided
+      status: status || "In Progress", // Default to In Progress if not provided
     }
 
-    // Create new report
-    const newReport = new Report({
-      title,
-      description,
-      requester,
-      assignedTo,
-    })
+    // Only add optional fields if they are provided
+    if (witness) reportData.witness = witness
+    if (block) reportData.block = block
 
-    // Save the report to the database
+    // Create and save the report
+    const newReport = new Report(reportData)
     await newReport.save()
 
     // Respond with the newly created report
@@ -41,7 +42,7 @@ const postReport = async (req, res) => {
 // Function to get reports by requester
 const getReportsByRequester = async (req, res) => {
   try {
-    const requesterId = req.userId // Assuming userId is attached to the request during authentication
+    const requesterId = req.params.requesterId
 
     // Fetch reports from the database that match the requesterId
     const reports = await Report.find({ requester: requesterId }).sort({ createdAt: -1 })

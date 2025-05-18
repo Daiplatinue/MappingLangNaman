@@ -19,7 +19,7 @@ const reportSchema = new mongoose.Schema({
   },
   witness: {
     type: String,
-    required: true,
+    required: false, // Changed to false to make it optional
   },
   severity: {
     type: String,
@@ -32,6 +32,10 @@ const reportSchema = new mongoose.Schema({
   houseId: {
     type: String,
     required: true,
+  },
+  block: {
+    type: String,
+    required: false, // Added block field as optional
   },
   status: {
     type: String,
