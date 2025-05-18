@@ -1,45 +1,70 @@
 import { Report } from "../models/report.js"
+import { User } from "../models/user.js"
 
+// Function to create a new report
 const postReport = async (req, res) => {
   try {
-    const { type, dateTime, desc, location, witness, severity, requester, houseId } = req.body
+    const { title, description, assignedTo } = req.body
+    const requester = req.userId // Assuming userId is attached to the request during authentication
 
-    if (!type || !dateTime || !desc || !location || !witness || !severity || !requester || !houseId) {
-      return res.status(400).json({ message: "Please fill all fields" })
+    // Validate input
+    if (!title || !description || !assignedTo) {
+      return res.status(400).json({ message: "Please provide all required fields." })
     }
 
-    const newReport = await Report.create({
-      type,
-      dateTime,
-      desc,
-      location,
-      witness,
-      severity,
+    // Check if the assigned user exists
+    const assignedUser = await User.findById(assignedTo)
+    if (!assignedUser) {
+      return res.status(404).json({ message: "Assigned user not found." })
+    }
+
+    // Create new report
+    const newReport = new Report({
+      title,
+      description,
       requester,
-      houseId,
+      assignedTo,
     })
 
-    return res.status(201).json(newReport)
+    // Save the report to the database
+    await newReport.save()
+
+    // Respond with the newly created report
+    return res.status(201).json({ report: newReport, message: "Report created successfully" })
   } catch (error) {
-    console.error("Report creation error:", error)
-    return res.status(500).json({ message: "Server error while processing Report" })
+    // Handle errors
+    console.error("Error creating report:", error)
+    return res.status(500).json({ message: "Server error while creating report" })
   }
 }
 
+// Function to get reports by requester
 const getReportsByRequester = async (req, res) => {
   try {
-    const { requesterId } = req.params
+    const requesterId = req.userId // Assuming userId is attached to the request during authentication
 
-    if (!requesterId) {
-      return res.status(400).json({ message: "Requester ID is required" })
-    }
+    // Fetch reports from the database that match the requesterId
+    const reports = await Report.find({ requester: requesterId }).sort({ createdAt: -1 })
 
-    const reports = await Report.find({ requester: requesterId }).sort({ dateTime: -1 })
+    // Respond with the fetched reports
     return res.status(200).json(reports)
   } catch (error) {
+    // Handle errors
     console.error("Error fetching reports:", error)
     return res.status(500).json({ message: "Server error while fetching reports" })
   }
 }
 
-export { postReport, getReportsByRequester }
+// Add this new function to get all reports for admin view
+const getAllReports = async (req, res) => {
+  try {
+    const reports = await Report.find().sort({ createdAt: -1 })
+    return res.status(200).json(reports)
+  } catch (error) {
+    console.error("Error fetching all reports:", error)
+    return res.status(500).json({ message: "Server error while fetching reports" })
+  }
+}
+
+// Update the export to include the new function
+export { postReport, getReportsByRequester, getAllReports }

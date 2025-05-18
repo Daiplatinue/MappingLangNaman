@@ -1,28 +1,29 @@
 import mongoose from "mongoose"
+import { type } from "os"
 
-const EmergencySchema = new mongoose.Schema({
+const ConstructionSchema = new mongoose.Schema({
+  block: {
+    type: String,
+    required: true,
+  },
+  houseId: {
+    type: String,
+    required: true,
+  },
   type: {
     type: String,
     required: true,
   },
-  description: {
-    type: String,
-    required: true,
-  },
-  contact: {
-    type: String,
-    required: true,
-  },
-  requester: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
+  start: {
     type: Date,
-    default: Date.now,
+    required: true,
+  },
+  end: {
+    type: Date,
+    required: true,
   },
 })
 
-const Emergency = mongoose.model("Emergency", EmergencySchema)
+const Construction = mongoose.model("Construction", ConstructionSchema)
 
-export { Emergency }
+export { Construction }

@@ -370,6 +370,8 @@ export const initialUsersData = [
     blockId: "A",
     householdId: "A1",
     userType: "customer",
+    contact: "REF001", // Added contact property
+    status: "Active", // Added status property
   },
   {
     id: 2,
@@ -381,6 +383,8 @@ export const initialUsersData = [
     blockId: "B",
     householdId: "B2",
     userType: "customer",
+    contact: "REF002", // Added contact property
+    status: "Active", // Added status property
   },
   {
     id: 3,
@@ -392,6 +396,8 @@ export const initialUsersData = [
     blockId: "C",
     householdId: "C3",
     userType: "customer",
+    contact: "REF003", // Added contact property
+    status: "Active", // Added status property
   },
   {
     id: 4,
@@ -403,6 +409,8 @@ export const initialUsersData = [
     blockId: "",
     householdId: "",
     userType: "guard",
+    contact: "REF004", // Added contact property
+    status: "Active", // Added status property
   },
   {
     id: 5,
@@ -414,6 +422,8 @@ export const initialUsersData = [
     blockId: "",
     householdId: "",
     userType: "guard",
+    contact: "REF005", // Added contact property
+    status: "Active", // Added status property
   },
   {
     id: 6,
@@ -425,5 +435,7 @@ export const initialUsersData = [
     blockId: "",
     householdId: "",
     userType: "guard",
+    contact: "REF006", // Added contact property
+    status: "Active", // Added status property
   },
 ]

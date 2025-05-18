@@ -4,8 +4,10 @@ import cors from "cors"
 import { registerUser, loginUser } from "./controller/authController.js"
 import { postEmergency } from "./controller/emergencyController.js"
 import { postRequest, getRequestsByRequester } from "./controller/userRequestController.js"
-import { postReport, getReportsByRequester } from "./controller/reportController.js"
-import { postPayment, getPaymentsByUserId } from "./controller/paymentController.js"
+import { postReport, getReportsByRequester, getAllReports } from "./controller/reportController.js"
+import { postPayment, getPaymentsByUserId, getAllPayments } from "./controller/paymentController.js"
+import { postConstruction } from "./controller/constructionController.js"
+import { postadminCreateUser } from "./controller/adminCreateUserController.js"
 
 import mongoose from "mongoose"
 
@@ -23,9 +25,11 @@ app.use(
 )
 app.use(express.json())
 
+// Authentication Routes
 app.post("/register", registerUser)
 app.post("/login", loginUser)
 
+// Household Owner Routes
 app.post("/postEmergency", postEmergency)
 
 app.post("/postRequest", postRequest)
@@ -36,6 +40,14 @@ app.get("/reports/:requesterId", getReportsByRequester)
 
 app.post("/postPayment", postPayment)
 app.get("/payments/:userId", getPaymentsByUserId)
+
+// Admin Routes
+app.post("/postConstruction", postConstruction)
+app.post("/postadminCreateUser", postadminCreateUser)
+
+// Add this route for admin to fetch all payments and reports
+app.get("/payments", getAllPayments)
+app.get("/reports", getAllReports)
 
 app.get("/", (req, res) => {
   console.log("req.body")
