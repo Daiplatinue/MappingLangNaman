@@ -1,3 +1,5 @@
+import { DialogTrigger } from "@/components/ui/dialog"
+
 import type React from "react"
 
 import { useEffect, useState } from "react"
@@ -10,10 +12,8 @@ import {
   FileText,
   Filter,
   Home,
-  Info,
   LayoutDashboard,
   LogOut,
-  MessageSquare,
   Plus,
   Search,
   Settings,
@@ -23,6 +23,9 @@ import {
   Users,
   Zap,
   AlertTriangle,
+  Pencil,
+  Trash2,
+  ClipboardCopy,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -44,7 +47,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -67,6 +69,17 @@ import {
 } from "@/components/ui/sidebar"
 
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+import {
   initialBlocksData,
   initialHouseholdsData,
   initialIncidentsData,
@@ -75,6 +88,8 @@ import {
   initialUsersData,
 } from "./AdminTabs/blocks-data"
 import axios from "axios"
+
+const API_BASE_URL = import.meta.env.VITE_API_URL
 
 const StatCard = ({ icon, title, value, description, color }: any) => {
   return (
@@ -282,6 +297,12 @@ function AdminDashboard() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [fetchingNotifications, setFetchingNotifications] = useState(false)
 
+  // Add these state variables after the other state declarations (around line 235)
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+
   // Add a new type definition for User after the Notification type (around line 230):
   type User = {
     _id?: string
@@ -304,7 +325,7 @@ function AdminDashboard() {
   const fetchAllPayments = async () => {
     try {
       setFetchingPayments(true)
-      const response = await axios.get("http://localhost:3000/payments")
+      const response = await axios.get(`${API_BASE_URL}/payments`)
       if (response.data) {
         setPayments(response.data)
       }
@@ -320,7 +341,7 @@ function AdminDashboard() {
   const fetchAllReports = async () => {
     try {
       setFetchingReports(true)
-      const response = await axios.get("http://localhost:3000/reports")
+      const response = await axios.get(`${API_BASE_URL}/reports`)
       if (response.data) {
         setReports(response.data)
       }
@@ -336,7 +357,7 @@ function AdminDashboard() {
   const fetchAllConstructions = async () => {
     try {
       setFetchingConstructions(true)
-      const response = await axios.get("http://localhost:3000/constructions")
+      const response = await axios.get(`${API_BASE_URL}/constructions`)
       if (response.data) {
         setConstructions(response.data)
       }
@@ -352,7 +373,7 @@ function AdminDashboard() {
   const fetchAllNotifications = async () => {
     try {
       setFetchingNotifications(true)
-      const response = await axios.get("http://localhost:3000/notifications")
+      const response = await axios.get(`${API_BASE_URL}/notifications`)
       if (response.data) {
         setNotifications(response.data)
       }
@@ -368,15 +389,163 @@ function AdminDashboard() {
   const fetchAllUsers = async () => {
     try {
       setFetchingUsers(true)
-      const response = await axios.get("http://localhost:3000/users")
+      const response = await axios.get(`${API_BASE_URL}/users`)
       if (response.data) {
         setDbUsers(response.data)
       }
     } catch (error) {
       console.error("Error fetching users:", error)
-      toast.error("Failed to fetch users")
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as any).response === "object"
+      ) {
+        toast.error("Failed to fetch users: " + ((error as any).response?.data?.message || "Network error"))
+      } else {
+        toast.error("Failed to fetch users: Network error")
+      }
     } finally {
       setFetchingUsers(false)
+    }
+  }
+
+  // Add these functions after the fetchAllUsers function
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user)
+    setUserValues({
+      firstname: user.firstname,
+      lastname: user.lastname,
+      middlename: user.middlename || "",
+      email: user.email,
+      contact: user.contact,
+      type: user.type,
+      block: user.block || "",
+      houseId: user.houseId || "",
+      status: user.status,
+    })
+    setIsEditUserOpen(true)
+  }
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedUser?._id) return
+
+    setLoading(true)
+    setError("")
+
+    try {
+      if (
+        !userValues.firstname ||
+        !userValues.lastname ||
+        !userValues.email ||
+        !userValues.contact ||
+        !userValues.type
+      ) {
+        setError("Please fill all required fields")
+        setLoading(false)
+        return
+      }
+
+      // Create payload based on user type
+      const payload: {
+        firstname: string
+        lastname: string
+        middlename: string
+        email: string
+        contact: string
+        type: string
+        status: string
+        block?: string
+        houseId?: string
+      } = {
+        firstname: userValues.firstname,
+        lastname: userValues.lastname,
+        middlename: userValues.middlename,
+        email: userValues.email,
+        contact: userValues.contact,
+        type: userValues.type,
+        status: userValues.status,
+      }
+
+      // Only include block and houseId for non-guard users
+      if (userValues.type !== "guard") {
+        if (!userValues.block || !userValues.houseId) {
+          setError("Block and House ID are required for residents")
+          setLoading(false)
+          return
+        }
+        payload.block = userValues.block
+        payload.houseId = userValues.houseId
+      }
+
+      try {
+        console.log(`Updating user at: ${API_BASE_URL}/users/${selectedUser._id}`)
+        console.log("Payload:", payload)
+
+        const response = await axios.put(`${API_BASE_URL}/users/${selectedUser._id}`, payload)
+
+        if (response.data) {
+          toast.success("User updated successfully")
+          setIsEditUserOpen(false)
+          // Refresh the users list
+          fetchAllUsers()
+          // Reset form
+          setUserValues({
+            firstname: "",
+            lastname: "",
+            middlename: "",
+            email: "",
+            contact: "",
+            type: "",
+            block: "",
+            houseId: "",
+            status: "Active",
+          })
+          setSelectedUser(null)
+        }
+      } catch (error: any) {
+        console.error("User update error:", error)
+        const errorMessage =
+          error.response?.data?.message ||
+          (error.code === "ERR_NETWORK"
+            ? "Network error. Please check your connection and make sure the server is running."
+            : "Connection error. Please try again later.")
+        setError(errorMessage)
+        toast.error(errorMessage)
+      }
+    } catch (error: any) {
+      console.error("User creation error:", error)
+      setError(error.response?.data?.message || "Connection error. Please try again later.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!deletingUserId) return
+
+    try {
+      console.log(`Deleting user at: ${API_BASE_URL}/users/${deletingUserId}`)
+
+      const response = await axios.delete(`${API_BASE_URL}/users/${deletingUserId}`)
+
+      if (response.status === 200) {
+        toast.success("User deleted successfully")
+        // Refresh the users list
+        fetchAllUsers()
+      }
+    } catch (error: any) {
+      console.error("User deletion error:", error)
+      const errorMessage =
+        error.response?.data?.message ||
+        (error.code === "ERR_NETWORK"
+          ? "Network error. Please check your connection and make sure the server is running."
+          : "Error deleting user")
+      toast.error(errorMessage)
+    } finally {
+      setIsDeleteDialogOpen(false)
+      setDeletingUserId(null)
     }
   }
 
@@ -567,7 +736,7 @@ function AdminDashboard() {
 
     // Send the notification to the database
     axios
-      .post("http://localhost:3000/postNotification", {
+      .post(`${API_BASE_URL}/postNotification`, {
         type: newNotification.type,
         recipient: newNotification.recipient, // Changed from recepient to recipient
         subject: newNotification.subject,
@@ -785,7 +954,7 @@ function AdminDashboard() {
         payload.houseId = userValues.houseId
       }
 
-      const response = await axios.post("http://localhost:3000/postadminCreateUser", payload)
+      const response = await axios.post(`${API_BASE_URL}/postadminCreateUser`, payload)
 
       if (response.data) {
         toast.success("User created successfully")
@@ -801,6 +970,8 @@ function AdminDashboard() {
           houseId: "",
           status: "Active",
         })
+        // Refresh the users list
+        fetchAllUsers()
       }
     } catch (error: any) {
       console.error("User creation error:", error)
@@ -827,7 +998,7 @@ function AdminDashboard() {
     setConstructionError("")
 
     try {
-      const response = await axios.post("http://localhost:3000/postConstruction", {
+      const response = await axios.post(`${API_BASE_URL}/postConstruction`, {
         block: constructionForm.blockId,
         houseId: constructionForm.householdId,
         type: constructionForm.status,
@@ -1153,24 +1324,26 @@ function AdminDashboard() {
                         {incidentsData.slice(0, 4).map((incident) => (
                           <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
                             <div
-                              className={`p-2 rounded-full ${incident.type === "Security"
+                              className={`p-2 rounded-full ${
+                                incident.type === "Security"
                                   ? "bg-red-100"
                                   : incident.type === "Maintenance"
                                     ? "bg-blue-100"
                                     : incident.type === "Noise"
                                       ? "bg-yellow-100"
                                       : "bg-purple-100"
-                                }`}
+                              }`}
                             >
                               <AlertTriangle
-                                className={`h-4 w-4 ${incident.type === "Security"
+                                className={`h-4 w-4 ${
+                                  incident.type === "Security"
                                     ? "text-red-500"
                                     : incident.type === "Maintenance"
                                       ? "text-blue-500"
                                       : incident.type === "Noise"
                                         ? "text-yellow-500"
                                         : "text-purple-500"
-                                  }`}
+                                }`}
                               />
                             </div>
                             <div>
@@ -1418,24 +1591,26 @@ function AdminDashboard() {
                               filteredIncidents.map((incident) => (
                                 <div key={incident.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
                                   <div
-                                    className={`p-2 rounded-full ${incident.type === "Security"
+                                    className={`p-2 rounded-full ${
+                                      incident.type === "Security"
                                         ? "bg-red-100"
                                         : incident.type === "Maintenance"
                                           ? "bg-blue-100"
                                           : incident.type === "Noise"
                                             ? "bg-yellow-100"
                                             : "bg-purple-100"
-                                      }`}
+                                    }`}
                                   >
                                     <AlertTriangle
-                                      className={`h-4 w-4 ${incident.type === "Security"
+                                      className={`h-4 w-4 ${
+                                        incident.type === "Security"
                                           ? "text-red-500"
                                           : incident.type === "Maintenance"
                                             ? "text-blue-500"
                                             : incident.type === "Noise"
                                               ? "text-yellow-500"
                                               : "text-purple-500"
-                                        }`}
+                                      }`}
                                     />
                                   </div>
                                   <div>
@@ -1740,12 +1915,7 @@ function AdminDashboard() {
                           <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                               <Label htmlFor="incident-witness">Witness (Optional)</Label>
-                              <Input
-                                id="incident-witness"
-                                placeholder="Name of witness if any"
-                                value={incidentForm.witness}
-                                onChange={(e) => setIncidentForm({ ...incidentForm, witness: e.target.value })}
-                              />
+                              <Input id="incident-witness" placeholder="Name of witness if any" />
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="incident-severity">Severity</Label>
@@ -1804,7 +1974,7 @@ function AdminDashboard() {
                                   payload.block = incidentForm.block
                                 }
 
-                                const response = await axios.post("http://localhost:3000/postReport", payload)
+                                const response = await axios.post(`${API_BASE_URL}/postReport`, payload)
 
                                 if (response.data) {
                                   toast.success("Incident reported successfully")
@@ -1897,7 +2067,9 @@ function AdminDashboard() {
                                   className={
                                     report.status === "Resolved"
                                       ? "bg-green-100 text-green-700"
-                                      : "bg-yellow-100 text-yellow-700"
+                                      : report.status === "Yellow"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-blue-100 text-blue-700"
                                   }
                                 >
                                   {report.status}
@@ -2614,11 +2786,11 @@ function AdminDashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>ID</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Type</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Contact</TableHead>
                           <TableHead>Block</TableHead>
                           <TableHead>Household</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
@@ -2634,6 +2806,21 @@ function AdminDashboard() {
                         ) : dbUsers && dbUsers.length > 0 ? (
                           dbUsers.map((user, index) => (
                             <TableRow key={user._id || index}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs truncate max-w-[100px]">{user._id}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(user._id || "")
+                                      toast.success("ID copied to clipboard")
+                                    }}
+                                  >
+                                    <ClipboardCopy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-8 w-8">
@@ -2671,16 +2858,28 @@ function AdminDashboard() {
                                   {user.status}
                                 </Badge>
                               </TableCell>
-                              <TableCell>{user.contact}</TableCell>
                               <TableCell>{user.block ? `Block ${user.block}` : "-"}</TableCell>
                               <TableCell>{user.houseId || (user.type === "guard" ? "N/A" : "Unassigned")}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="ghost" size="sm">
-                                    <MessageSquare className="h-4 w-4" />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      handleEditUser(user)
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="ghost" size="sm">
-                                    <Info className="h-4 w-4" />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setDeletingUserId(user._id || "")
+                                      setIsDeleteDialogOpen(true)
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
                                   </Button>
                                 </div>
                               </TableCell>
@@ -2697,98 +2896,6 @@ function AdminDashboard() {
                     </Table>
                   </CardContent>
                 </Card>
-                {/* Add a new Card component for Pending Accounts in the users tab, right after the existing Card with the user table. Place this code before the Household Management Card: */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pending Accounts</CardTitle>
-                    <CardDescription>Review and approve new user registrations</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Contact</TableHead>
-                          <TableHead>Date Registered</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {usersData
-                          .filter((user) => user.status === "Pending")
-                          .map((user) => (
-                            <TableRow key={user.id}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarFallback>
-                                      {user.firstName?.charAt(0) || ""}
-                                      {user.lastName?.charAt(0) || ""}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <span className="font-medium">
-                                      {user.firstName} {user.lastName}
-                                    </span>
-                                    {user.middleName && (
-                                      <span className="text-xs text-muted-foreground ml-1">({user.middleName})</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>{user.email}</TableCell>
-                              <TableCell>
-                                <Badge variant={user.userType === "guard" ? "secondary" : "default"}>
-                                  {user.userType === "guard" ? "Guard" : "Customer"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{user.referralCode || user.contact}</TableCell>
-                              <TableCell>{new Date().toLocaleDateString()}</TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      // Update user status to Active
-                                      const updatedUsers = usersData.map((u) =>
-                                        u.id === user.id ? { ...u, status: "Active" } : u,
-                                      )
-                                      setUsersData(updatedUsers)
-                                      toast.success(`${user.firstName} ${user.lastName} has been approved`)
-                                    }}
-                                  >
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => {
-                                      // Remove user from the list
-                                      setUsersData(usersData.filter((u) => u.id !== user.id))
-                                      toast.success(`${user.firstName} ${user.lastName} has been rejected`)
-                                    }}
-                                  >
-                                    Reject
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        {!usersData.some((user) => user.status === "Pending") && (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                              No pending accounts to review
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-
                 <Card>
                   <CardHeader>
                     <CardTitle>Household Management</CardTitle>
@@ -2940,6 +3047,173 @@ function AdminDashboard() {
                     </Dialog>
                   </CardContent>
                 </Card>
+                {/* Edit User Dialog */}
+                <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle>Edit User</DialogTitle>
+                      <DialogDescription>Update user information.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="firstName">First Name</Label>
+                          <Input
+                            id="firstName"
+                            name="firstName"
+                            placeholder="First Name"
+                            value={userValues.firstname}
+                            onChange={(e) => setUserValues({ ...userValues, firstname: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="lastName">Last Name</Label>
+                          <Input
+                            id="lastName"
+                            name="lastName"
+                            placeholder="Last Name"
+                            value={userValues.lastname}
+                            onChange={(e) => setUserValues({ ...userValues, lastname: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="middleName">Middle Name (Optional)</Label>
+                        <Input
+                          id="middleName"
+                          name="middleName"
+                          placeholder="Middle Name"
+                          value={userValues.middlename}
+                          onChange={(e) => setUserValues({ ...userValues, middlename: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="Email"
+                          value={userValues.email}
+                          onChange={(e) => setUserValues({ ...userValues, email: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="contact">Contact</Label>
+                        <Input
+                          id="contact"
+                          name="contact"
+                          type="text"
+                          placeholder="Contact"
+                          value={userValues.contact}
+                          onChange={(e) => setUserValues({ ...userValues, contact: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="userType">User Type</Label>
+                        <Select
+                          value={userValues.type}
+                          onValueChange={(value) => setUserValues({ ...userValues, type: value })}
+                        >
+                          <SelectTrigger id="userType">
+                            <SelectValue placeholder="Select user type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="customer">Customer</SelectItem>
+                            <SelectItem value="guard">Guard</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {userValues.type === "customer" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="blockId">Block</Label>
+                            <Select
+                              value={userValues.block}
+                              onValueChange={(value) => setUserValues({ ...userValues, block: value })}
+                            >
+                              <SelectTrigger id="blockId">
+                                <SelectValue placeholder="Select block" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {blocksData.map((block) => (
+                                  <SelectItem key={block.id} value={block.id}>
+                                    {block.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="householdId">Household ID</Label>
+                            <Select
+                              value={userValues.houseId}
+                              onValueChange={(value) => setUserValues({ ...userValues, houseId: value })}
+                              disabled={!userValues.block}
+                            >
+                              <SelectTrigger id="householdId">
+                                <SelectValue placeholder="Select household" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {userValues.block &&
+                                  getAvailableHouseholds(userValues.block).map((household) => (
+                                    <SelectItem key={household.id} value={household.id}>
+                                      {household.id} - {household.occupants} occupant(s)
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+                      <div className="grid gap-2">
+                        <Label htmlFor="userStatus">Status</Label>
+                        <Select
+                          value={userValues.status}
+                          onValueChange={(value) => setUserValues({ ...userValues, status: value })}
+                        >
+                          <SelectTrigger id="userStatus">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Active">Active</SelectItem>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="Inactive">Inactive</SelectItem>
+                            <SelectItem value="Suspended">Suspended</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" onClick={handleUpdateUser} disabled={loading}>
+                        {loading ? "Updating..." : "Update User"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Delete User Confirmation Dialog */}
+                <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the user account and remove their
+                        data from our servers.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </TabsContent>
               <TabsContent value="notifications" className="space-y-4">
                 <div className="flex justify-between items-center">

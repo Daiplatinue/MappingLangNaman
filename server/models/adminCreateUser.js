@@ -1,4 +1,6 @@
 import mongoose from "mongoose"
+import bcrypt from "bcrypt" 
+import mongooseBcrypt from "mongoose-bcrypt" 
 
 const adminCreateUserSchema = new mongoose.Schema({
   firstname: {
@@ -15,6 +17,14 @@ const adminCreateUserSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
+    unique: true, 
+  },
+  password: {
+    type: String,
+    bcrypt: true, 
+    required: function () {
+      return this.createdBy === "self"
+    },
   },
   contact: {
     type: String,
@@ -27,13 +37,13 @@ const adminCreateUserSchema = new mongoose.Schema({
   block: {
     type: String,
     required: function () {
-      return this.type !== "guard" 
+      return this.type !== "guard"
     },
   },
   houseId: {
     type: String,
     required: function () {
-      return this.type !== "guard" 
+      return this.type !== "guard"
     },
   },
   status: {
@@ -41,7 +51,22 @@ const adminCreateUserSchema = new mongoose.Schema({
     default: "Active",
     enum: ["Active", "Inactive", "Suspended", "Pending"],
   },
+  createdBy: {
+    type: String,
+    enum: ["admin", "self"],
+    default: "admin",
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 })
+
+adminCreateUserSchema.plugin(mongooseBcrypt)
+
+adminCreateUserSchema.methods.verifyPassword = function (password) {
+  return bcrypt.compareSync(password, this.password)
+}
 
 const adminCreateUser = mongoose.model("adminCreateUser", adminCreateUserSchema)
 

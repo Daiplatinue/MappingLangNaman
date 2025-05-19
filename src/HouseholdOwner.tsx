@@ -47,6 +47,8 @@ import { Separator } from "@/components/ui/separator"
 import axios from "axios"
 import { householdData, type ConsumptionCardProps } from "./householdData"
 
+const API_BASE_URL = import.meta.env.VITE_API_URL
+
 // Define the UserRequest interface
 interface UserRequest {
   _id: string
@@ -329,7 +331,7 @@ const OnlinePaymentDialog = ({ setActiveTab, userId }: { setActiveTab: (value: s
       }
 
       // Post to MongoDB
-      await axios.post("http://localhost:3000/postPayment", paymentData)
+      await axios.post(`${API_BASE_URL}/postPayment`, paymentData)
 
       // Simulate processing delay
       setTimeout(() => {
@@ -661,7 +663,7 @@ function HouseholdOwner() {
   const fetchUserRequests = async () => {
     setFetchingRequests(true)
     try {
-      const response = await axios.get(`http://localhost:3000/requests/${userId}`)
+      const response = await axios.get(`${API_BASE_URL}/requests/${userId}`)
       if (response.data) {
         setUserRequests(response.data)
       }
@@ -676,7 +678,7 @@ function HouseholdOwner() {
   const fetchUserReports = async () => {
     setFetchingReports(true)
     try {
-      const response = await axios.get(`http://localhost:3000/reports/${userId}`)
+      const response = await axios.get(`${API_BASE_URL}/reports/${userId}`)
       if (response.data) {
         setUserReports(response.data)
       }
@@ -691,7 +693,7 @@ function HouseholdOwner() {
   const fetchPaymentHistory = async () => {
     try {
       setFetchingPayments(true)
-      const response = await axios.get(`http://localhost:3000/payments/${userId}`)
+      const response = await axios.get(`${API_BASE_URL}/payments/${userId}`)
       if (response.data) {
         setPayments(response.data)
         // Also store in localStorage for immediate access
@@ -778,7 +780,7 @@ function HouseholdOwner() {
 
       console.log("Submitting report:", reportValue)
 
-      const response = await axios.post("http://localhost:3000/postReport", {
+      const response = await axios.post(`${API_BASE_URL}/postReport`, {
         type: reportValue.type,
         dateTime: reportValue.dateTime,
         desc: reportValue.desc,
@@ -849,7 +851,7 @@ function HouseholdOwner() {
 
       console.log("Submitting request:", requestValue)
 
-      const response = await axios.post("http://localhost:3000/postRequest", {
+      const response = await axios.post(`${API_BASE_URL}/postRequest`, {
         type: requestValue.type,
         desc: requestValue.desc,
         date: requestValue.date,
@@ -906,7 +908,7 @@ function HouseholdOwner() {
 
       console.log("Submitting emergency:", values)
 
-      const response = await axios.post("http://localhost:3000/postEmergency", {
+      const response = await axios.post(`${API_BASE_URL}/postEmergency`, {
         type: values.type,
         description: values.description,
         contact: values.contact,

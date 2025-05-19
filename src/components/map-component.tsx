@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
@@ -8,14 +6,7 @@ import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Building2, Users, Home, Calendar, Info, LayoutGrid, ChevronLeft, Shield, Clock, MapPin } from "lucide-react"
@@ -37,6 +28,8 @@ import {
   type ResidenceData,
   getStatusColor,
 } from "./subdivision-data"
+
+import House from "./house"
 
 const MapInitializer = () => {
   const map = useMap()
@@ -175,10 +168,34 @@ const createSecurityIcon = () => {
 
 // Update the createPinIcon function to accept a status parameter
 const createPinIcon = (status?: StatusType) => {
-  let pinColor = "#3B82F6" // Default to blue (Occupied) if no status provided
+  let pinColor = "#10B981" // Default to green (Occupied) if no status provided
 
   if (status) {
-    pinColor = getStatusColor(status)
+    switch (status) {
+      case "Occupied":
+        pinColor = "#10B981" // Green
+        break
+      case "Unoccupied":
+        pinColor = "#FFFFFF" // White
+        break
+      case "Under Renovation":
+        pinColor = "#F59E0B" // Yellow
+        break
+      case "Upcoming Renovation":
+        pinColor = "#FDD128" // Tuscany
+        break
+      case "Under Construction":
+        pinColor = "#EF4444" // Red
+        break
+      case "Upcoming Construction":
+        pinColor = "#FA003F" // Rose Red
+        break
+      case "Commercial":
+        pinColor = "#94A3B8" // Gray for commercial facilities
+        break
+      default:
+        pinColor = "#10B981" // Default to green
+    }
   }
 
   return L.divIcon({
@@ -200,15 +217,33 @@ const CustomPinMarker = ({ pin }: { pin: ResidenceData }) => {
 
   // Determine the status based on the pin's description or default to "Occupied"
   const determineStatus = (): StatusType => {
+    // Special facility types - all commercial facilities should be gray
+    if (
+      pin.name.includes("Basketball Court") ||
+      pin.name.includes("Summit Hall") ||
+      pin.name.includes("Clinic") ||
+      pin.name.includes("Parking Lot")
+    ) {
+      return "Commercial"
+    }
+
+    // Regular residence statuses
     if (pin.description.includes("Unoccupied")) return "Unoccupied"
     if (pin.description.includes("Under Renovation")) return "Under Renovation"
     if (pin.description.includes("Upcoming Renovation")) return "Upcoming Renovation"
     if (pin.description.includes("Under Construction")) return "Under Construction"
     if (pin.description.includes("Upcoming Construction")) return "Upcoming Construction"
+
+    // Mitchell Residence should be Occupied (green)
+    if (pin.name === "Mitchell Residence") return "Occupied"
+
     return "Occupied"
   }
 
   const status = determineStatus()
+
+  // Set occupants to 0 for commercial and unoccupied properties
+  const occupants = status === "Commercial" || status === "Unoccupied" ? 0 : pin.occupants
 
   const handleMouseOver = (e: L.LeafletMouseEvent) => {
     const markerElement = e.target.getElement()
@@ -216,13 +251,23 @@ const CustomPinMarker = ({ pin }: { pin: ResidenceData }) => {
       // Create popup content dynamically with improved styling
       const popupContent = document.createElement("div")
       popupContent.className = "pin-popup"
+
+      // Check if it's a special facility
+      const isSpecialFacility = status === "Commercial"
+
       popupContent.innerHTML = `
         <div class="pin-popup-content">
           <h4 class="pin-popup-title">${pin.name}</h4>
+          ${
+            !isSpecialFacility
+              ? `
           <div class="pin-popup-occupants">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="pin-popup-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-            <span>${pin.occupants} ${pin.occupants === 1 ? "Occupant" : "Occupants"}</span>
+            <span>${occupants} ${occupants === 1 ? "Occupant" : "Occupants"}</span>
           </div>
+          `
+              : ""
+          }
           <p class="pin-popup-description">${pin.description.length > 80 ? pin.description.substring(0, 80) + "..." : pin.description}</p>
           <div class="pin-popup-footer">Click for more details</div>
         </div>
@@ -253,45 +298,51 @@ const CustomPinMarker = ({ pin }: { pin: ResidenceData }) => {
       />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px] px-5 max-h-[90vh] overflow-hidden fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] z-[9999]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">{pin.name}</DialogTitle>
             <DialogDescription className="text-sm opacity-90 mt-1">{pin.description}</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <div className="flex items-center justify-between mb-4 bg-muted/50 p-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                <span className="text-sm font-medium">Occupants:</span>
-              </div>
-              <Badge className="ml-auto text-sm px-3 py-1">{pin.occupants}</Badge>
-            </div>
-            <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                <span className="text-sm font-medium">Location:</span>
-              </div>
-              <span className="text-xs text-muted-foreground ml-2 font-mono">
-                [{pin.position[0].toFixed(6)}, {pin.position[1].toFixed(6)}]
-              </span>
-            </div>
-          </div>
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full">
-              Close
-            </Button>
-            <Button
-              className="w-full"
-              onClick={() => {
-                toast.success(`Contacting ${pin.name}`, {
-                  description: "This would connect you with the residents.",
-                })
-                setIsDialogOpen(false)
-              }}
-            >
-              Contact Residents
-            </Button>
-          </DialogFooter>
+          <House
+            houseData={{
+              id: pin.id,
+              name: pin.name,
+              position: pin.position,
+              occupants: occupants,
+              description: pin.description,
+              status: determineStatus(),
+              address: `Block ${pin.id}, Deca Homes Tunghaan Subdivision`,
+              residents: [
+                {
+                  id: 1,
+                  name: "John Smith",
+                  role: "Owner",
+                  contactNumber: "+63 912 345 6789",
+                  email: "john.smith@example.com",
+                },
+                {
+                  id: 2,
+                  name: "Maria Smith",
+                  role: "Spouse",
+                  contactNumber: "+63 912 345 6790",
+                  email: "maria.smith@example.com",
+                },
+                {
+                  id: 3,
+                  name: "Alex Smith",
+                  role: "Child",
+                  contactNumber: "+63 912 345 6791",
+                  email: "alex.smith@example.com",
+                },
+              ],
+              lastVisited: new Date().toLocaleDateString(),
+              yearBuilt: "2018",
+              propertyType: "Residential",
+              lotArea: "120 sqm",
+              floorArea: "80 sqm",
+            }}
+            onClose={() => setIsDialogOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </>
@@ -303,10 +354,13 @@ const PinColorPicker = () => {
   const [isOpen, setIsOpen] = useState(false)
 
   const statusColors = [
-    { status: "Occupied", color: "#3B82F6", label: "Occupied (Blue)" },
+    { status: "Occupied", color: "#10B981", label: "Occupied (Green)" },
     { status: "Unoccupied", color: "#FFFFFF", label: "Unoccupied (White)" },
     { status: "Under Renovation", color: "#F59E0B", label: "Under Renovation (Yellow)" },
+    { status: "Upcoming Renovation", color: "#FDD128", label: "Upcoming Renovation (Tuscany)" },
     { status: "Under Construction", color: "#EF4444", label: "Under Construction (Red)" },
+    { status: "Upcoming Construction", color: "#FA003F", label: "Upcoming Construction (Rose Red)" },
+    { status: "Commercial", color: "#94A3B8", label: "Commercial Facilities (Gray)" },
   ]
 
   return (
@@ -404,7 +458,7 @@ export default function MapViewer() {
   .pin-head {
     width: 20px;
     height: 20px;
-    background-color: #3B82F6; /* Default blue */
+    background-color: #10B981; /* Default green for Occupied */
     border: 2px solid white;
     border-radius: 50%;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
@@ -416,7 +470,7 @@ export default function MapViewer() {
   .pin-tail {
     width: 2px;
     height: 20px;
-    background: linear-gradient(to bottom, #3B82F6, transparent); /* Default blue */
+    background: linear-gradient(to bottom, #10B981, transparent); /* Default green for Occupied */
     position: absolute;
     top: 18px;
     left: 14px;
@@ -516,15 +570,6 @@ export default function MapViewer() {
   const handleHouseClick = (house: HouseProperties) => {
     setSelectedHouse(house)
     setSelectedEntrance(null)
-  }
-
-  // Handle polygon click
-  const handlePolygonClick = (polygon: PolygonData) => {
-    setSelectedPolygon(polygon)
-    setSelectedHouse(null)
-    setSelectedEntrance(null)
-    setActiveTab("overview")
-    setIsModalOpen(true)
   }
 
   // Update the handleEntranceClick function to reset the expanded state
@@ -646,53 +691,6 @@ export default function MapViewer() {
                     fillOpacity: 0.2,
                     weight: 2,
                   }}
-                  eventHandlers={{
-                    click: (e) => {
-                      // Get center of polygon for popup positioning
-                      const bounds = L.polygon(polygon.positions as unknown as L.LatLngExpression[][]).getBounds()
-                      const center = bounds.getCenter()
-
-                      // Create a popup at the center of the polygon
-                      L.popup()
-                        .setLatLng(center)
-                        .setContent(`
-                          <div class="p-2">
-                            <h3 class="font-bold text-primary">${polygon.name}</h3>
-                            <div class="flex items-center gap-2 mt-1">
-                              <span class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
-                                Block ${polygon.properties.blockNumber}
-                              </span>
-                              <span class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
-                                ${polygon.type}
-                              </span>
-                            </div>
-                            <p class="mt-2 text-sm">
-                              <span class="font-medium">Households:</span> ${polygon.properties.numberOfHouseholds}
-                            </p>
-                            <div class="flex gap-2 mt-2">
-                              <button 
-                                class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 w-full"
-                                onclick="document.getElementById('view-details-${polygon.id}').click()"
-                              >
-                                View Details
-                              </button>
-                              <button id="view-details-${polygon.id}" style="display:none;"></button>
-                            </div>
-                          </div>
-                        `)
-                        .openOn(e.target._map)
-
-                      // Add event listener to the hidden button
-                      setTimeout(() => {
-                        const button = document.getElementById(`view-details-${polygon.id}`)
-                        if (button) {
-                          button.addEventListener("click", () => {
-                            handlePolygonClick(polygon)
-                          })
-                        }
-                      }, 0)
-                    },
-                  }}
                 />
               ))}
           </MapContainer>
@@ -701,7 +699,7 @@ export default function MapViewer() {
 
       {/* Pin/House/Security Details Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[600px] p-0 max-h-[90vh] overflow-hidden z-[2002]">
+        <DialogContent className="sm:max-w-[600px] p-0 max-h-[90vh] overflow-hidden fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] z-[9999]">
           <AnimatePresence>
             {selectedPin && (
               <motion.div
@@ -1105,12 +1103,7 @@ export default function MapViewer() {
                                     src={guard.photo || "/placeholder.svg?height=40&width=40"}
                                     alt={guard.name}
                                   />
-                                  <AvatarFallback>
-                                    {guard.name
-                                      .split(" ")
-                                      .map((n) => n[0])
-                                      .join("")}
-                                  </AvatarFallback>
+                                  <AvatarFallback>{guard.name.split(" ").map((n) => n[0])}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
                                   <div className="flex justify-between items-start">
@@ -1150,12 +1143,7 @@ export default function MapViewer() {
                                     src={guard.photo || "/placeholder.svg?height=40&width=40"}
                                     alt={guard.name}
                                   />
-                                  <AvatarFallback>
-                                    {guard.name
-                                      .split(" ")
-                                      .map((n) => n[0])
-                                      .join("")}
-                                  </AvatarFallback>
+                                  <AvatarFallback>{guard.name.split(" ").map((n) => n[0])}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
                                   <div className="flex justify-between items-start">
@@ -1195,12 +1183,7 @@ export default function MapViewer() {
                                     src={guard.photo || "/placeholder.svg?height=40&width=40"}
                                     alt={guard.name}
                                   />
-                                  <AvatarFallback>
-                                    {guard.name
-                                      .split(" ")
-                                      .map((n) => n[0])
-                                      .join("")}
-                                  </AvatarFallback>
+                                  <AvatarFallback>{guard.name.split(" ").map((n) => n[0])}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
                                   <div className="flex justify-between items-start">
