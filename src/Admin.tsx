@@ -214,7 +214,6 @@ const HouseholdCard = ({ household, onClick, isActive }: any) => {
 }
 
 function AdminDashboard() {
-  const [guardsData] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("dashboard")
   const [selectedBlock, setSelectedBlock] = useState<any>(null)
   const [selectedHousehold, setSelectedHousehold] = useState<any>(null)
@@ -423,6 +422,7 @@ function AdminDashboard() {
       block: user.block || "",
       houseId: user.houseId || "",
       status: user.status,
+      password: "",
     })
     setIsEditUserOpen(true)
   }
@@ -458,6 +458,7 @@ function AdminDashboard() {
         status: string
         block?: string
         houseId?: string
+        password?: string
       } = {
         firstname: userValues.firstname,
         lastname: userValues.lastname,
@@ -466,6 +467,11 @@ function AdminDashboard() {
         contact: userValues.contact,
         type: userValues.type,
         status: userValues.status,
+      }
+
+      // Add password if provided
+      if (userValues.password) {
+        payload.password = userValues.password
       }
 
       // Only include block and houseId for non-guard users
@@ -501,6 +507,7 @@ function AdminDashboard() {
             block: "",
             houseId: "",
             status: "Active",
+            password: "",
           })
           setSelectedUser(null)
         }
@@ -578,6 +585,12 @@ function AdminDashboard() {
   // Add a useEffect to load users when the users tab is active:
   useEffect(() => {
     if (activeTab === "users") {
+      fetchAllUsers()
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    if (activeTab === "security") {
       fetchAllUsers()
     }
   }, [activeTab])
@@ -892,6 +905,7 @@ function AdminDashboard() {
     block: string
     houseId: string
     status: string
+    password: string
   }>({
     firstname: "",
     lastname: "",
@@ -902,6 +916,7 @@ function AdminDashboard() {
     block: "",
     houseId: "",
     status: "Active",
+    password: "",
   })
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -933,6 +948,7 @@ function AdminDashboard() {
         status: string
         block?: string
         houseId?: string
+        password?: string
       } = {
         firstname: userValues.firstname,
         lastname: userValues.lastname,
@@ -941,6 +957,11 @@ function AdminDashboard() {
         contact: userValues.contact,
         type: userValues.type,
         status: userValues.status, // Include status field
+      }
+
+      // Add password if admin is creating the user
+      if (userValues.password) {
+        payload.password = userValues.password
       }
 
       // Only include block and houseId for non-guard users
@@ -969,6 +990,7 @@ function AdminDashboard() {
           block: "",
           houseId: "",
           status: "Active",
+          password: "",
         })
         // Refresh the users list
         fetchAllUsers()
@@ -2583,26 +2605,28 @@ function AdminDashboard() {
                       <div className="mt-4">
                         <h4 className="font-medium mb-2">Available Guards</h4>
                         <div className="space-y-2">
-                          {guardsData.map((guard) => (
-                            <div key={guard.u_id} className="flex items-center justify-between p-3 border rounded-md">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarFallback>
-                                    {guard.u_fn?.charAt(0) || ""}
-                                    {guard.u_ln?.charAt(0) || ""}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <span className="font-medium">
-                                    {guard.u_fn} {guard.u_ln}
-                                  </span>
-                                  <span className="text-xs block text-muted-foreground">{guard.u_email}</span>
+                          {dbUsers
+                            .filter((user) => user.type === "guard")
+                            .map((guard) => (
+                              <div key={guard._id} className="flex items-center justify-between p-3 border rounded-md">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback>
+                                      {guard.firstname?.charAt(0) || ""}
+                                      {guard.lastname?.charAt(0) || ""}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <span className="font-medium">
+                                      {guard.firstname} {guard.lastname}
+                                    </span>
+                                    <span className="text-xs block text-muted-foreground">{guard.email}</span>
+                                  </div>
                                 </div>
+                                <Badge variant="outline">Guard</Badge>
                               </div>
-                              <Badge variant="outline">Guard</Badge>
-                            </div>
-                          ))}
-                          {guardsData.length === 0 && (
+                            ))}
+                          {dbUsers.filter((user) => user.type === "guard").length === 0 && (
                             <div className="text-center py-4 text-muted-foreground">No guards available</div>
                           )}
                         </div>
@@ -2687,6 +2711,17 @@ function AdminDashboard() {
                               placeholder="Contact"
                               value={userValues.contact}
                               onChange={(e) => setUserValues({ ...userValues, contact: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                              id="password"
+                              name="password"
+                              type="password"
+                              placeholder="Set user password"
+                              value={userValues.password}
+                              onChange={(e) => setUserValues({ ...userValues, password: e.target.value })}
                             />
                           </div>
                           <div className="grid gap-2">
@@ -3107,6 +3142,17 @@ function AdminDashboard() {
                           placeholder="Contact"
                           value={userValues.contact}
                           onChange={(e) => setUserValues({ ...userValues, contact: e.target.value })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                          id="password"
+                          name="password"
+                          type="password"
+                          placeholder="Set new password (leave empty to keep current)"
+                          value={userValues.password}
+                          onChange={(e) => setUserValues({ ...userValues, password: e.target.value })}
                         />
                       </div>
                       <div className="grid gap-2">

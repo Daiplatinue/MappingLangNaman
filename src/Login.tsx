@@ -39,8 +39,17 @@ function SignInForm({ onSwitchToRegister }: { onSwitchToRegister: () => void }) 
       })
 
       if (response.data) {
-        localStorage.setItem("user", JSON.stringify(response.data))
-        navigate("/household-owner")
+        // Store user data in localStorage
+        localStorage.setItem("admincreateusers", JSON.stringify(response.data))
+
+        // Check user role and redirect accordingly
+        if (response.data.type === "guard") {
+          // If user is a guard, redirect to guard page
+          navigate("/guard")
+        } else {
+          // For other roles (household owners, etc.), redirect to household-owner
+          navigate("/household-owner")
+        }
       }
     } catch (error: any) {
       console.error("Login error:", error)

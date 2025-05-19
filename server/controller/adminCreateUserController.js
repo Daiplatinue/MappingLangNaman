@@ -40,6 +40,21 @@ const postadminCreateUser = async (req, res) => {
       status,
     }
 
+    // Add password if provided by admin
+    if (password) {
+      userData.password = password
+    }
+
+    // Randomize block and houseId if not provided and user is not a guard
+    if (type !== "guard" && (!block || !houseId)) {
+      // Define available blocks
+      const blocks = ["A", "B", "C", "D"]
+      // Randomly select a block
+      userData.block = block || blocks[Math.floor(Math.random() * blocks.length)]
+      // Generate a random house number between 1 and 20
+      userData.houseId = houseId || `${userData.block}${Math.floor(Math.random() * 20) + 1}`
+    }
+
     if (type !== "guard") {
       userData.block = block
       userData.houseId = houseId
@@ -73,10 +88,10 @@ const customerCreateUser = async (req, res) => {
       email,
       contact,
       password,
-      type: "customer", 
-      status: "Pending", 
-      createdBy: "self",  
-      block: "Pending",  
+      type: "customer",
+      status: "Pending",
+      createdBy: "self",
+      block: "Pending",
       houseId: "Pending",
     })
 
