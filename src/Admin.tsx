@@ -1,3 +1,5 @@
+"use client"
+
 import { DialogTrigger } from "@/components/ui/dialog"
 
 import type React from "react"
@@ -88,6 +90,8 @@ import {
   initialUsersData,
 } from "./AdminTabs/blocks-data"
 import axios from "axios"
+
+import MapViewer from "../src/AdminTabs/MapView"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
 
@@ -1400,6 +1404,7 @@ function AdminDashboard() {
                     </CardFooter>
                   </Card>
                 </div>
+                <MapViewer />
               </TabsContent>
 
               {/* Blocks Tab */}

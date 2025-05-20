@@ -27,9 +27,9 @@ import {
   type PolygonData,
   type ResidenceData,
   getStatusColor,
-} from "./subdivision-data"
+} from "../components/subdivision-data"
 
-import House from "./house"
+import House from "../components/house"
 
 const MapInitializer = () => {
   const map = useMap()
@@ -622,7 +622,7 @@ export default function MapViewer() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
+    <div className="h-[50rem] w-[71rem] flex flex-col overflow-hidden">
       {/* Update the header to not have blur when modal is present */}
       <header className="p-4 border-b bg-background sticky top-0 z-[2001]">
         <div className="container mx-auto">
@@ -635,7 +635,7 @@ export default function MapViewer() {
           <MapContainer
             center={CENTER_POSITION}
             zoom={INITIAL_ZOOM}
-            style={{ height: "100%", width: "100%" }}
+            style={{ height: "50rem", width: "71rem" }}
             zoomControl={false}
             ref={(map) => {
               mapRef.current = map

@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -43,11 +41,14 @@ function SignInForm({ onSwitchToRegister }: { onSwitchToRegister: () => void }) 
         localStorage.setItem("admincreateusers", JSON.stringify(response.data))
 
         // Check user role and redirect accordingly
-        if (response.data.type === "guard") {
+        if (response.data.user.type === "guard") {
           // If user is a guard, redirect to guard page
           navigate("/guard")
+        } else if (response.data.user.type === "customer") {
+          // If user is a customer, redirect to household-owner
+          navigate("/household-owner")
         } else {
-          // For other roles (household owners, etc.), redirect to household-owner
+          // For other roles, redirect to household-owner as default
           navigate("/household-owner")
         }
       }

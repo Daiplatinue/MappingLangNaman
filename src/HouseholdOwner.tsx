@@ -47,6 +47,8 @@ import { Separator } from "@/components/ui/separator"
 import axios from "axios"
 import { householdData, type ConsumptionCardProps } from "./householdData"
 
+import MapViewer from "../src/Household-Owner/MapViewOwner"
+
 const API_BASE_URL = import.meta.env.VITE_API_URL
 
 // Define the UserRequest interface
@@ -1241,6 +1243,7 @@ function HouseholdOwner() {
                         Learn More About Our System
                       </Button>
                     </CardFooter>
+                    <MapViewer />
                   </Card>
                 </TabsContent>
 
